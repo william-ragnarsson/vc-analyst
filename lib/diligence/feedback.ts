@@ -12,6 +12,7 @@ import type {
   ProgressCallback,
   ResearchResult,
 } from "./types";
+import { cleanDashes } from "./parse";
 
 interface ReviewArgs {
   /** Concrete model id to run on; provider is derived from the name. */
@@ -40,9 +41,9 @@ function parseFeedbackLine(line: string): DeckFeedbackItem | null {
     if (!severity || typeof obj.title !== "string" || !obj.title) return null;
     return {
       severity,
-      category: typeof obj.category === "string" ? obj.category : "General",
-      title: obj.title,
-      detail: typeof obj.detail === "string" ? obj.detail : "",
+      category: cleanDashes(typeof obj.category === "string" ? obj.category : "General"),
+      title: cleanDashes(obj.title),
+      detail: cleanDashes(typeof obj.detail === "string" ? obj.detail : ""),
     };
   } catch {
     return null;
