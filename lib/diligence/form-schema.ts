@@ -68,7 +68,7 @@ export const DD_SECTIONS: FormSection[] = [
     ],
   },
   {
-    title: "GTM / Revenue / Traction / Competitive",
+    title: "Other",
     fields: [
       { key: "market.gtm", label: "GTM", kind: "text", hint: "Go-to-market: target customers and channels." },
       { key: "market.revenueModel", label: "Revenue Model", kind: "text", hint: "How they make money; pricing; any revenue caveats." },
