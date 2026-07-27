@@ -1,27 +1,20 @@
 import Anthropic from "@anthropic-ai/sdk";
-import { HAIKU_MODEL_ID, MODEL_ID, OCR_MODEL_ID, getAnthropicApiKey } from "@/lib/config";
+import {
+  getAnthropicApiKey,
+  getOcrMaxTokens,
+  getResearchMaxContinuations,
+  getResearchMaxSearches,
+  getResearchMaxTokens,
+  getWriteMaxTokens,
+  modelSupportsEffort,
+} from "@/lib/config";
 import type {
-  GenerateArgs,
   LlmProvider,
-  ResearchArgs,
   ResearchOutput,
   SystemPrompt,
   TokenUsage,
   WebSource,
 } from "./types";
-
-// All Anthropic-specific knobs live here and nowhere else.
-const MAX_CONTINUATIONS = 3; // safety cap for the server-side web-search loop
-const MAX_SEARCHES = 3; // research breadth — enough to chase each missing fact without runaway cost
-const RESEARCH_MAX_TOKENS = 5000;
-const WRITE_MAX_TOKENS = 16000;
-const OCR_MAX_TOKENS = 16000;
-
-const webSearchTool = {
-  type: "web_search_20260209" as const,
-  name: "web_search" as const,
-  max_uses: MAX_SEARCHES,
-};
 
 function client(): Anthropic {
   return new Anthropic({ apiKey: getAnthropicApiKey() });
@@ -70,11 +63,11 @@ function usageOf(usage: Anthropic.Usage, model: string): TokenUsage {
 export const claudeProvider: LlmProvider = {
   name: "claude",
 
-  async transcribePdf(pdf, instruction, onUsage) {
+  async transcribePdf(pdf, model, instruction, onUsage) {
     // Stream to avoid HTTP timeouts on long transcriptions; we only need text.
     const stream = client().messages.stream({
-      model: OCR_MODEL_ID,
-      max_tokens: OCR_MAX_TOKENS,
+      model,
+      max_tokens: getOcrMaxTokens(),
       messages: [
         {
           role: "user",
@@ -93,19 +86,34 @@ export const claudeProvider: LlmProvider = {
       ],
     });
     const message = await stream.finalMessage();
-    onUsage?.(usageOf(message.usage, OCR_MODEL_ID));
+    onUsage?.(usageOf(message.usage, model));
     return textOf(message.content);
   },
 
-  async researchWeb({ system, user, onSearch, onSource, onText, onUsage, signal }): Promise<ResearchOutput> {
+  async researchWeb({ model, system, user, onSearch, onSource, onText, onUsage, signal }): Promise<ResearchOutput> {
     const c = client();
     const messages: Anthropic.MessageParam[] = [{ role: "user", content: user }];
+    const maxContinuations = getResearchMaxContinuations();
     const params = {
-      model: MODEL_ID,
-      max_tokens: RESEARCH_MAX_TOKENS,
+      model,
+      max_tokens: getResearchMaxTokens(),
       system: toSystem(system),
-      tools: [webSearchTool],
-      output_config: { effort: "low" as const },
+      tools: [
+        {
+          type: "web_search_20260209" as const,
+          name: "web_search" as const,
+          max_uses: getResearchMaxSearches(),
+          // Restrict to direct calls: this tool's default caller set includes
+          // programmatic (code-execution) calling, which only newer models
+          // support — without this, a model like Haiku 4.5 400s ("does not
+          // support programmatic tool calling"). Direct is all this pipeline
+          // ever needs (no code execution tool is declared here).
+          allowed_callers: ["direct" as const],
+        },
+      ],
+      // Not every model accepts this param (e.g. Haiku 4.5 400s on it), so only
+      // send it when RESEARCH_MODEL is one that supports it.
+      ...(modelSupportsEffort(model) ? { output_config: { effort: "low" as const } } : {}),
     };
 
     const sources: WebSource[] = [];
@@ -137,30 +145,28 @@ export const claudeProvider: LlmProvider = {
     let stream = c.messages.stream({ ...params, messages }, { signal });
     attach(stream);
     let response = await stream.finalMessage();
-    onUsage?.(usageOf(response.usage, MODEL_ID));
+    onUsage?.(usageOf(response.usage, model));
 
     // The web_search tool runs a server-side loop; resume on pause_turn.
     let continuations = 0;
-    while (response.stop_reason === "pause_turn" && continuations < MAX_CONTINUATIONS) {
+    while (response.stop_reason === "pause_turn" && continuations < maxContinuations) {
       messages.push({ role: "assistant", content: response.content });
       stream = c.messages.stream({ ...params, messages }, { signal });
       attach(stream);
       response = await stream.finalMessage();
-      onUsage?.(usageOf(response.usage, MODEL_ID));
+      onUsage?.(usageOf(response.usage, model));
       continuations += 1;
     }
 
     return { findings: textOf(response.content), sources };
   },
 
-  async generateStream({ system, user, tier, onText, onUsage, signal }) {
+  async generateStream({ model, system, user, onText, onUsage, signal }) {
     // No tools — stream plain text (the pipeline parses NDJSON field lines).
-    // "economy" stages run on the cheaper Haiku model.
-    const model = tier === "economy" ? HAIKU_MODEL_ID : MODEL_ID;
     const stream = client().messages.stream(
       {
         model,
-        max_tokens: WRITE_MAX_TOKENS,
+        max_tokens: getWriteMaxTokens(),
         system: toSystem(system),
         messages: [{ role: "user", content: user }],
       },

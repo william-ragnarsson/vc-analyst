@@ -62,6 +62,7 @@ Rules:
 - "source": "deck" if it came from the pitch deck, "web" if from research, "inferred" if you reasoned it, "unknown" if you genuinely don't have it.
 - Do NOT fabricate. If a field can't be filled, skip it (don't emit a line).
 - Keep text values concise and specific (1-4 sentences). Output nothing except the JSON lines.
+- Do NOT use em-dashes (—) or en-dashes (–) anywhere in the text values; use a regular hyphen (-) or rephrase instead.
 - STOP as soon as you've gone through the field list once - do not repeat a key, do not loop back to the start, do not pad with extra lines.
 
 ## Fields
@@ -225,6 +226,7 @@ Output ONLY a sequence of JSON objects, ONE PER LINE (NDJSON). No prose, no mark
 Rules:
 - Emit 5-10 items total, mixing severities - do not emit only critical items.
 - Be specific to THIS deck. Do not fabricate facts; ground every item in the deck text or research notes.
+- Do NOT use em-dashes (—) or en-dashes (–) in any of the fields (title, detail, category); use a regular hyphen (-) instead.
 - Output nothing except the JSON lines.`,
   );
 }

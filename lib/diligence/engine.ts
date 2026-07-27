@@ -3,7 +3,12 @@ import { fillFields } from "@/lib/diligence/fill-fields";
 import { scoreCard } from "@/lib/diligence/score";
 import { reviewDeck } from "@/lib/diligence/feedback";
 import { research } from "@/lib/diligence/research";
-import { getWriterProvider } from "@/lib/diligence/provider-config";
+import {
+  getCompleteModel,
+  getExtractModel,
+  getFeedbackModel,
+  getScorecardModel,
+} from "@/lib/config";
 import {
   buildCompleteSystemPrompt,
   buildCompleteUserPrompt,
@@ -37,16 +42,13 @@ class PipelineDiligenceEngine implements DiligenceEngine {
   ): Promise<DueDiligenceForm> {
     const emit: ProgressCallback = onEvent ?? (() => {});
     const form = emptyForm();
-    // Extraction + completion are ungrounded generation — use the writer provider.
-    const provider = getWriterProvider();
 
     // 1. Extract everything derivable from the deck.
     emit({ type: "status", phase: "extracting", message: "Reading the deck" });
     await fillFields({
-      provider,
+      model: getExtractModel(),
       system: buildDeckExtractSystemPrompt(input.playbook, input.deckText),
       user: buildDeckExtractUserPrompt(),
-      tier: "economy", // deck reading is structured extraction — Haiku handles it cheaply
       form,
       emit,
       stage: "extract",
@@ -68,10 +70,9 @@ class PipelineDiligenceEngine implements DiligenceEngine {
     // 3. Complete the form with the findings.
     emit({ type: "status", phase: "completing", message: "Completing the form" });
     await fillFields({
-      provider,
+      model: getCompleteModel(),
       system: buildCompleteSystemPrompt(input.playbook, input.deckText),
       user: buildCompleteUserPrompt(researchResult),
-      tier: "economy", // gap-filling from research notes doesn't need full Sonnet judgment
       form,
       emit,
       stage: "complete",
@@ -82,7 +83,7 @@ class PipelineDiligenceEngine implements DiligenceEngine {
     // 4. Score the scorecard in its own dedicated pass — the sole input to the
     //    invest model, kept separate so it can't be truncated to empty.
     await scoreCard({
-      provider,
+      model: getScorecardModel(),
       deckText: input.deckText,
       research: researchResult,
       playbook: input.playbook,
@@ -96,7 +97,7 @@ class PipelineDiligenceEngine implements DiligenceEngine {
     //    in the playbook and research signals gathered above.
     emit({ type: "status", phase: "completing", message: "Reviewing the pitch deck" });
     await reviewDeck({
-      provider,
+      model: getFeedbackModel(),
       deckText: input.deckText,
       research: researchResult,
       playbook: input.playbook,

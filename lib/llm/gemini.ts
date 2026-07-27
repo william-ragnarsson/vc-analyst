@@ -1,24 +1,13 @@
 import { GoogleGenAI } from "@google/genai";
-import { GEMINI_MODEL_ID, GEMINI_OCR_MODEL_ID, getGeminiApiKey } from "@/lib/config";
+import { getGeminiApiKey, getOcrMaxTokens, getWriteMaxTokens } from "@/lib/config";
 import type {
-  GenerateArgs,
   LlmProvider,
-  ResearchArgs,
   ResearchOutput,
   SystemPrompt,
   TokenUsage,
   WebSource,
 } from "./types";
 import type { GenerateContentResponseUsageMetadata } from "@google/genai";
-
-// All Gemini-specific knobs live here and nowhere else.
-const OCR_MAX_TOKENS = 16000;
-// The field-fill passes emit a long NDJSON document. Gemini 2.5 Flash has
-// "thinking" ON by default, which spends the output-token budget on hidden
-// reasoning and can truncate the stream before the trailing fields (the
-// scorecard) are written. Disable thinking and give the visible output a
-// generous cap so the whole document always lands.
-const GENERATE_MAX_TOKENS = 16000;
 
 function ai(): GoogleGenAI {
   return new GoogleGenAI({ apiKey: getGeminiApiKey() });
@@ -50,23 +39,23 @@ function usageOf(usage: GenerateContentResponseUsageMetadata | undefined, model:
 export const geminiProvider: LlmProvider = {
   name: "gemini",
 
-  async transcribePdf(pdf, instruction, onUsage) {
+  async transcribePdf(pdf, model, instruction, onUsage) {
     const response = await ai().models.generateContent({
-      model: GEMINI_OCR_MODEL_ID,
+      model,
       contents: [
         { inlineData: { mimeType: "application/pdf", data: pdf.toString("base64") } },
         { text: instruction },
       ],
       // Thinking off — the whole budget goes to the transcription.
-      config: { maxOutputTokens: OCR_MAX_TOKENS, thinkingConfig: { thinkingBudget: 0 } },
+      config: { maxOutputTokens: getOcrMaxTokens(), thinkingConfig: { thinkingBudget: 0 } },
     });
-    onUsage?.(usageOf(response.usageMetadata, GEMINI_OCR_MODEL_ID));
+    onUsage?.(usageOf(response.usageMetadata, model));
     return (response.text ?? "").trim();
   },
 
-  async researchWeb({ system, user, onSearch, onSource, onText, onUsage, signal }): Promise<ResearchOutput> {
+  async researchWeb({ model, system, user, onSearch, onSource, onText, onUsage, signal }): Promise<ResearchOutput> {
     const stream = await ai().models.generateContentStream({
-      model: GEMINI_MODEL_ID,
+      model,
       contents: user,
       // Google Search grounding — the equivalent of Claude's web_search.
       config: { systemInstruction: toSystemInstruction(system), tools: [{ googleSearch: {} }], abortSignal: signal },
@@ -108,21 +97,22 @@ export const geminiProvider: LlmProvider = {
     }
 
     console.log(`[gemini.researchWeb] finish=${lastFinish} findingsLen=${findings.length} queries=${seenQueries.size} sources=${sources.length}`);
-    onUsage?.(usageOf(lastUsage, GEMINI_MODEL_ID));
+    onUsage?.(usageOf(lastUsage, model));
     return { findings: findings.trim(), sources };
   },
 
-  async generateStream({ system, user, onText, onUsage, signal }) {
-    // `tier` is ignored here — Gemini stages already use the cheap Flash model.
+  async generateStream({ model, system, user, onText, onUsage, signal }) {
     // No tools — stream plain text (the pipeline parses NDJSON field lines). We
     // deliberately don't set responseMimeType json: the output is many JSON
-    // lines, not one object.
+    // lines, not one object. Thinking is off — Gemini 2.5 Flash has it ON by
+    // default, which spends the output-token budget on hidden reasoning and can
+    // truncate the stream before the trailing fields (the scorecard) land.
     const stream = await ai().models.generateContentStream({
-      model: GEMINI_MODEL_ID,
+      model,
       contents: user,
       config: {
         systemInstruction: toSystemInstruction(system),
-        maxOutputTokens: GENERATE_MAX_TOKENS,
+        maxOutputTokens: getWriteMaxTokens(),
         thinkingConfig: { thinkingBudget: 0 },
         abortSignal: signal,
       },
@@ -136,7 +126,7 @@ export const geminiProvider: LlmProvider = {
         onText?.(chunk.text);
       }
     }
-    onUsage?.(usageOf(lastUsage, GEMINI_MODEL_ID));
+    onUsage?.(usageOf(lastUsage, model));
     return text.trim();
   },
 };

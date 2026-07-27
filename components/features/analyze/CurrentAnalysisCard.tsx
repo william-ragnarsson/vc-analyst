@@ -11,8 +11,12 @@ export default function CurrentAnalysisCard() {
   const { stream, currentId, file } = useAnalysis();
   if (!currentId) return null;
 
-  const activeLabel = stream.steps.find((s) => s.status === "active")?.label ?? "Working";
-  const doneCount = stream.steps.filter((s) => s.status === "done").length;
+  const activeIndex = stream.steps.findIndex((s) => s.status === "active");
+  const activeLabel = activeIndex === -1 ? "Working" : stream.steps[activeIndex].label;
+  // 1-indexed "current step" (not a count of completed steps) — so progress
+  // reads 1/5 → 5/5 rather than 0/5 → 4/5. No step is "active" once every
+  // step is done, so that terminal state is the last step number.
+  const currentStep = activeIndex === -1 ? stream.steps.length : activeIndex + 1;
   const name = stream.form.company.name.value || file?.name || "Analyzing deck";
 
   return (
@@ -27,7 +31,7 @@ export default function CurrentAnalysisCard() {
       <div className="min-w-0 flex-1">
         <p className="truncate font-semibold text-ink">{name}</p>
         <p className="text-sm text-accent">
-          {activeLabel}… · step {doneCount}/{stream.steps.length}
+          {activeLabel}… · step {currentStep}/{stream.steps.length}
         </p>
       </div>
       <span className="shrink-0 text-sm font-medium text-accent transition-transform group-hover:translate-x-0.5">

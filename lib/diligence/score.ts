@@ -1,5 +1,5 @@
 import { getProvider } from "@/lib/llm";
-import type { Provider } from "@/lib/llm";
+import { deriveProvider } from "@/lib/config";
 import { costOf } from "@/lib/llm/pricing";
 import {
   buildScorecardSystemPrompt,
@@ -9,7 +9,8 @@ import { applyField } from "./parse";
 import type { DueDiligenceForm, ProgressCallback, ResearchResult } from "./types";
 
 interface ScoreArgs {
-  provider: Provider;
+  /** Concrete model id to run on; provider is derived from the name. */
+  model: string;
   deckText: string;
   research: ResearchResult;
   playbook: string;
@@ -50,7 +51,7 @@ function extractObject(text: string): Record<string, unknown> | null {
  * and every metric is written onto the form and emitted as a live `field` event.
  */
 export async function scoreCard({
-  provider,
+  model,
   deckText,
   research,
   playbook,
@@ -58,10 +59,10 @@ export async function scoreCard({
   emit,
   signal,
 }: ScoreArgs): Promise<void> {
-  const text = await getProvider(provider).generateStream({
+  const text = await getProvider(deriveProvider(model)).generateStream({
+    model,
     system: buildScorecardSystemPrompt(playbook, deckText),
     user: buildScorecardUserPrompt(research),
-    tier: "economy", // seven bounded ratings + one integer — Haiku handles this reliably
     onUsage: (usage) => emit({ type: "usage", stage: "scorecard", usage, costUsd: costOf(usage) }),
     signal,
   });

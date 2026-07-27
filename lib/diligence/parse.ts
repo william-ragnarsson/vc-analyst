@@ -45,8 +45,24 @@ export function parseFieldLine(line: string): ParsedField | null {
   }
 }
 
+/**
+ * Normalize em/en dashes (and stray double-hyphens) that the model likes to
+ * emit down to a plain hyphen, while keeping numeric ranges tight (2020-2024).
+ * A safety net so generated text never shows a dash even if the model ignores
+ * the prompt instruction against them.
+ */
+export function cleanDashes(text: string): string {
+  if (!text) return text;
+  return text
+    .replace(/(\d)\s*[–—]\s*(\d)/g, "$1-$2") // numeric ranges → tight hyphen
+    .replace(/\s*[–—]\s*/g, " - ") // em/en dash → spaced hyphen
+    .replace(/\s*--\s*/g, " - ") // double hyphen → spaced hyphen
+    .replace(/ {2,}/g, " "); // collapse doubled spaces
+}
+
 function str(v: unknown): string {
-  return typeof v === "string" ? v : v == null ? "" : String(v);
+  const s = typeof v === "string" ? v : v == null ? "" : String(v);
+  return cleanDashes(s);
 }
 
 function clampRating(v: unknown): number {

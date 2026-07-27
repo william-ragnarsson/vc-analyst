@@ -11,7 +11,11 @@ interface Rate {
   cacheWrite: number;
 }
 
+// Keep this in sync with KNOWN_MODELS in lib/config.ts — every model the user
+// can select in .env should have a row here so per-stage cost tracking works.
 const PER_MILLION: Record<string, Rate> = {
+  "claude-opus-4-8": { input: 5.0, output: 25.0, cacheRead: 0.5, cacheWrite: 6.25 },
+  "claude-sonnet-5": { input: 3.0, output: 15.0, cacheRead: 0.3, cacheWrite: 3.75 },
   "claude-sonnet-4-6": { input: 3.0, output: 15.0, cacheRead: 0.3, cacheWrite: 3.75 },
   "claude-haiku-4-5": { input: 1.0, output: 5.0, cacheRead: 0.1, cacheWrite: 1.25 },
   // Gemini rates are best-effort from public pricing, not fetched live — update

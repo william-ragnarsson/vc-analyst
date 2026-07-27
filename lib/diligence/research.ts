@@ -1,6 +1,6 @@
 import { getProvider } from "@/lib/llm";
 import { costOf } from "@/lib/llm/pricing";
-import { getResearchProvider } from "@/lib/diligence/provider-config";
+import { deriveProvider, getResearchModel } from "@/lib/config";
 import {
   buildSearchSystemPrompt,
   buildSearchUserPrompt,
@@ -33,7 +33,9 @@ export async function research(
 ): Promise<ResearchResult> {
   const emit: ProgressCallback = onEvent ?? (() => {});
 
-  const result = await getProvider(getResearchProvider()).researchWeb({
+  const model = getResearchModel();
+  const result = await getProvider(deriveProvider(model)).researchWeb({
+    model,
     system: buildSearchSystemPrompt(playbook, deckText),
     user: buildSearchUserPrompt(ctx?.companyName ?? "", ctx?.gaps ?? []),
     onSearch: (query) => emit({ type: "search", query }),
