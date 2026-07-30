@@ -63,6 +63,9 @@ export async function predictInvest(scorecard: Scorecard): Promise<InvestVerdict
 
     return { invest, available: true, probability };
   } catch (err) {
+    // Surface the real cause in server logs — the verdict otherwise degrades
+    // silently to "unavailable" in the UI (e.g. a missing model.onnx on Vercel).
+    console.error("predictInvest failed:", err);
     return {
       invest: false,
       available: false,
