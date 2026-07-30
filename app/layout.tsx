@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono, Instrument_Serif } from "next/font/google";
-import PageFooter from "@/components/layout/PageFooter";
-import NavBar from "@/components/layout/NavBar";
+import LayoutShell from "@/components/layout/LayoutShell";
 import AnalysisProvider from "@/components/features/analyze/AnalysisProvider";
 import "./globals.css";
 
@@ -32,12 +31,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <div className="orb orb-1" style={{ width: 360, height: 360, bottom: -120, left: "30%", background: "radial-gradient(circle at 50% 50%, #d9eafc, transparent 70%)" }} />
 
         <AnalysisProvider>
-          <div className="relative z-10">
-            <NavBar />
-            {/* Pages set their own max-width — the report page needs to run wider than the rest. */}
-            <main className="pb-24">{children}</main>
-            <PageFooter />
-          </div>
+          <LayoutShell>{children}</LayoutShell>
         </AnalysisProvider>
       </body>
     </html>

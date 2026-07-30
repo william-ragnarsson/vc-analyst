@@ -42,7 +42,7 @@ export default function ReportPage() {
   }
 
   return (
-    <div ref={scrollRef} className="h-[calc(100dvh-4.5rem)] overflow-y-auto">
+    <div ref={scrollRef} className="h-full overflow-y-auto">
       <div className="sticky top-0 z-10 border-b border-ink/10 bg-paper/85 backdrop-blur">
         <div className="mx-auto flex max-w-6xl items-center gap-4 px-5 py-3">
           {backButton}
