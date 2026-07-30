@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef } from "react";
+import { useRef, useSyncExternalStore } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import PhaseStepper from "@/components/features/analyze/PhaseStepper";
@@ -9,11 +9,22 @@ import DevCostSidebar from "@/components/features/analyze/DevCostSidebar";
 import { useAnalysis } from "@/components/features/analyze/AnalysisProvider";
 import { getRecord } from "@/lib/diligence/history";
 
+// A no-op external store whose snapshot is `false` on the server and `true` on
+// the client — i.e. "have we hydrated yet?". Uses useSyncExternalStore (instead
+// of a mounted useState + effect) so it's a single render with no setState.
+const NOOP_SUBSCRIBE = () => () => {};
+
 export default function ReportPage() {
   const params = useParams<{ id: string }>();
   const id = params.id;
   const { stream, status, currentId, error } = useAnalysis();
   const scrollRef = useRef<HTMLDivElement>(null);
+
+  // This page's content comes entirely from client-only sources — localStorage
+  // history (getRecord) and the live-run context — both empty during SSR. Render
+  // nothing until mounted so the server HTML and the first client render agree;
+  // otherwise the two disagree (empty vs. populated) and hydration fails.
+  const mounted = useSyncExternalStore(NOOP_SUBSCRIBE, () => true, () => false);
 
   const isLive = currentId === id;
   const record = isLive ? null : getRecord(id);
@@ -28,6 +39,11 @@ export default function ReportPage() {
       ← Back
     </Link>
   );
+
+  // Pre-mount (server + first client render): a stable placeholder both agree on.
+  if (!mounted) {
+    return <div className="h-full" />;
+  }
 
   // Neither a live run nor a saved record — e.g. a hard refresh mid-run (only
   // finished runs persist) or a stale/deleted link.
