@@ -88,9 +88,12 @@ export async function POST(req: Request) {
           console.log("[analyze] ⏹ aborted");
         } else if (err instanceof EmptyDeckError) {
           send({ type: "error", message: err.message });
-        } else if (err instanceof Error && /API_?KEY is not set/i.test(err.message)) {
-          // Surface the engine's own message ("GEMINI_API_KEY is not set…" /
-          // "ANTHROPIC_API_KEY is not set…") so the fix is obvious server-side.
+        } else if (
+          err instanceof Error &&
+          /(API_?KEY is not set|is not a recognised model id)/i.test(err.message)
+        ) {
+          // Surface the engine's own config message (missing API key, or an
+          // unrecognised model id from envModel) so the fix is obvious.
           send({ type: "error", message: err.message });
         } else {
           console.error("[analyze] failed:", err);

@@ -36,17 +36,20 @@ export function getGeminiApiKey(): string {
 // ───────────────────────────── Models ─────────────────────────────
 
 /**
- * The model ids the pipeline is known to work with and price correctly (see
- * `lib/llm/pricing.ts`). Used only to catch typos: an unrecognised id is
- * warned about but still passed through to the API, so a genuinely newer model
- * works without a code change (and a real typo fails loudly at the API rather
- * than silently running the wrong model). Keep in sync with `.env.example`.
+ * The model ids the pipeline supports — the single source of truth for model
+ * selection. To be usable a model MUST be listed here AND have a pricing row in
+ * `lib/llm/pricing.ts`; `envModel` throws on anything else rather than passing
+ * it through. This is deliberate: an unlisted id would otherwise run but track
+ * as $0 (no pricing row) or, if mistyped, silently ride a stage's default. The
+ * cost of the stricter contract is that a genuinely new model must be added to
+ * both lists before use. Keep in sync with `PER_MILLION` and `.env.example`.
  */
 export const KNOWN_MODELS = [
   "claude-opus-4-8",
   "claude-sonnet-5",
   "claude-sonnet-4-6",
   "claude-haiku-4-5",
+  "gemini-3.5-flash",
   "gemini-2.5-flash",
 ] as const;
 
@@ -70,16 +73,18 @@ export function modelSupportsEffort(model: string): boolean {
 
 /**
  * Read a model id from `name`, falling back to `fallback` when unset. A set but
- * unrecognised value is warned about and passed through unchanged (see
- * KNOWN_MODELS) so new models keep working.
+ * unrecognised value throws (see KNOWN_MODELS): the run stops immediately with a
+ * clear message instead of silently running the wrong model or tracking as $0.
  */
 function envModel(name: string, fallback: string): string {
   const raw = process.env[name]?.trim();
   if (!raw) return fallback;
   if (!(KNOWN_MODELS as readonly string[]).includes(raw)) {
-    console.warn(
-      `[config] ${name}="${raw}" is not a recognised model id. Passing it to ` +
-        `the API anyway (cost tracking may show $0). Valid ids: ${KNOWN_MODELS.join(", ")}.`,
+    throw new Error(
+      `${name}="${raw}" is not a recognised model id. Set it to one of: ` +
+        `${KNOWN_MODELS.join(", ")} (or unset it to use the default "${fallback}"). ` +
+        `To add a new model, list it in KNOWN_MODELS (lib/config.ts) and add a ` +
+        `pricing row in lib/llm/pricing.ts.`,
     );
   }
   return raw;
@@ -88,7 +93,7 @@ function envModel(name: string, fallback: string): string {
 /** Per-stage model selection. Defaults reproduce the current pipeline exactly. */
 export const getOcrModel = (): string => envModel("OCR_MODEL", "gemini-2.5-flash");
 export const getExtractModel = (): string => envModel("EXTRACT_MODEL", "claude-haiku-4-5");
-export const getResearchModel = (): string => envModel("RESEARCH_MODEL", "claude-sonnet-4-6");
+export const getResearchModel = (): string => envModel("RESEARCH_MODEL", "claude-haiku-4-5");
 export const getCompleteModel = (): string => envModel("COMPLETE_MODEL", "claude-haiku-4-5");
 export const getScorecardModel = (): string => envModel("SCORECARD_MODEL", "claude-haiku-4-5");
 export const getFeedbackModel = (): string => envModel("FEEDBACK_MODEL", "claude-haiku-4-5");

@@ -19,7 +19,9 @@ const PER_MILLION: Record<string, Rate> = {
   "claude-sonnet-4-6": { input: 3.0, output: 15.0, cacheRead: 0.3, cacheWrite: 3.75 },
   "claude-haiku-4-5": { input: 1.0, output: 5.0, cacheRead: 0.1, cacheWrite: 1.25 },
   // Gemini rates are best-effort from public pricing, not fetched live — update
-  // if Google's rate card changes.
+  // if Google's rate card changes. Gemini has no explicit cache-write charge, so
+  // cacheWrite mirrors the input rate as a conservative upper bound.
+  "gemini-3.5-flash": { input: 1.5, output: 9.0, cacheRead: 0.15, cacheWrite: 1.5 },
   "gemini-2.5-flash": { input: 0.3, output: 2.5, cacheRead: 0.075, cacheWrite: 0.3 },
 };
 
