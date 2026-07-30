@@ -28,19 +28,6 @@ html, body {
   color: var(--ink);
 }
 
-/* Floating gradient orbs */
-@keyframes float-slow {
-  0%, 100% { transform: translate(0, 0) scale(1); }
-  50% { transform: translate(30px, -40px) scale(1.08); }
-}
-@keyframes float-slow-2 {
-  0%, 100% { transform: translate(0, 0) scale(1); }
-  50% { transform: translate(-40px, 30px) scale(1.12); }
-}
-.orb { position: fixed; border-radius: 9999px; filter: blur(70px); opacity: 0.5; pointer-events: none; z-index: 0; }
-.orb-1 { animation: float-slow 14s ease-in-out infinite; }
-.orb-2 { animation: float-slow-2 18s ease-in-out infinite; }
-
 /* Highlighter marker reveal */
 @keyframes marker-in {
   from { background-size: 0% 100%; }

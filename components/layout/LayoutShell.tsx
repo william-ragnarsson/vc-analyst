@@ -9,14 +9,12 @@ import Footer from "./Footer";
  * footer. It also owns the scroll model, which differs in one place:
  *
  * - Normal pages scroll the document — the shell is `min-h-dvh` and grows with
- *   content, so there's a single (body) scrollbar and the fixed background orbs
- *   stay put behind it.
+ *   content, so there's a single (body) scrollbar.
  * - The report detail page (/due-diligence/[id]) has its own full-height inner
  *   scroll box and bakes its own footer into ReportView. There the shell is
  *   locked to exactly `h-dvh` with `overflow-hidden`, so the body never scrolls
  *   and the inner box is the *only* scroll region. Without this lock the body
- *   would overflow (by `main`'s bottom padding) and produce a second scrollbar
- *   plus a fixed-vs-scrolled background that visibly desyncs while scrolling.
+ *   would overflow (by `main`'s bottom padding) and produce a second scrollbar.
  */
 export default function LayoutShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();

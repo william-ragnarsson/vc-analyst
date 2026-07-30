@@ -25,11 +25,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       className={`${geistSans.variable} ${geistMono.variable} ${instrumentSerif.variable} antialiased`}
     >
       <body className="relative min-h-screen overflow-x-hidden">
-        {/* Background orbs */}
-        <div className="orb orb-1" style={{ width: 420, height: 420, top: -80, right: -60, background: "radial-gradient(circle at 30% 30%, #b9f0c9, transparent 70%)" }} />
-        <div className="orb orb-2" style={{ width: 480, height: 480, top: 200, right: -120, background: "radial-gradient(circle at 70% 30%, #ece0b8, transparent 70%)" }} />
-        <div className="orb orb-1" style={{ width: 360, height: 360, bottom: -120, left: "30%", background: "radial-gradient(circle at 50% 50%, #d9eafc, transparent 70%)" }} />
-
         <AnalysisProvider>
           <LayoutShell>{children}</LayoutShell>
         </AnalysisProvider>
