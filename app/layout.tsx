@@ -14,8 +14,22 @@ const instrumentSerif = Instrument_Serif({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL("https://vcanalyst.williamragnarsson.dev"),
   title: "AI VC Analyst - 800+ decks, distilled",
   description: "Top 6 of 250. 800 pitch decks reviewed. Everything I learned, distilled into an AI.",
+  openGraph: {
+    title: "AI VC Analyst - 800+ decks, distilled",
+    description: "Top 6 of 250. 800 pitch decks reviewed. Everything I learned, distilled into an AI.",
+    url: "https://vcanalyst.williamragnarsson.dev",
+    siteName: "AI VC Analyst",
+    type: "website",
+    // og:image tags are emitted automatically from app/opengraph-image.png
+  },
+  twitter: {
+    // X has no image of its own — it falls back to the Open Graph image above.
+    // This just asks X to render it as a large card rather than a small thumbnail.
+    card: "summary_large_image",
+  },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
