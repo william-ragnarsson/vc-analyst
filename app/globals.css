@@ -97,6 +97,13 @@ html, body {
 }
 .hero-float { animation: hero-float 7s ease-in-out infinite; }
 
+/* Page backdrop: fine dot grid on the paper, the light-side counterpart to
+   .hero-grid. Sits in a fixed layer behind every page. */
+.dot-grid {
+  background-image: radial-gradient(rgba(20, 19, 15, 0.085) 1px, transparent 1px);
+  background-size: 22px 22px;
+}
+
 /* Hero: faint grid inside the dark card, faded out toward the edges. */
 .hero-grid {
   background-image:
