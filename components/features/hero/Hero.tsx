@@ -3,21 +3,22 @@ import HeroReportMock from "@/components/features/hero/HeroReportMock";
 import RotatingWord from "@/components/features/hero/RotatingWord";
 
 const stats = [
-  { value: "800+ pitch decks", label: "Reviewed by hand, as a VC" },
-  { value: "Custom-trained AI", label: "Built on 800+ real verdicts" },
-  { value: "Top 6 of 250+", label: "Plug and Play Tech Center, SF" },
+  { value: "800+ pitch decks", label: "The training set behind the model" },
+  { value: "Custom-trained AI", label: "Built on 800+ real VC verdicts" },
+  { value: "Every claim sourced", label: "Tagged deck, web, or inference" },
   { value: "Free, no sign-up", label: "No account, no card, no catch" },
 ];
 
 /** The words that cycle through the headline — each one is something the engine scores. */
-const REVIEWED = ["deck", "team", "market", "traction", "story"];
+const SUBJECTS = ["deck", "team", "market", "traction", "founders"];
 
 export default function Hero() {
   return (
-    // The card is the first screen: it fills the viewport (minus the wrapper's
-    // gutter) so nothing important sits below the fold on load, and its top
-    // padding leaves room for the nav, which floats over it until you scroll.
-    <section className="relative flex min-h-[calc(100dvh-1.5rem)] flex-col overflow-hidden rounded-[40px] border border-white/10 bg-[linear-gradient(140deg,var(--ink)_0%,var(--ink-2)_55%,#0d2a1c_100%)] px-6 pb-6 pt-[4.5rem] shadow-[0_40px_80px_-40px_rgba(20,19,15,0.55)] ring-1 ring-inset ring-white/5 sm:px-12 sm:pb-10 sm:pt-28">
+    // The card is the first screen, so nothing important sits below the fold on
+    // load: its min-height is the viewport less the wrapper's gutter (p-3 /
+    // sm:p-6 — keep the two in step), and its top padding leaves room for the
+    // nav, which floats over the card until you scroll.
+    <section className="relative flex min-h-[calc(100dvh-1.5rem)] flex-col sm:min-h-[calc(100dvh-3rem)] overflow-hidden rounded-[40px] border border-white/10 bg-[linear-gradient(140deg,var(--ink)_0%,var(--ink-2)_55%,#0d2a1c_100%)] px-6 pb-6 pt-[4.5rem] shadow-[0_40px_80px_-40px_rgba(20,19,15,0.55)] ring-1 ring-inset ring-white/5 sm:px-12 sm:pb-10 sm:pt-28">
       <div aria-hidden className="hero-grid pointer-events-none absolute inset-0" />
       <div
         aria-hidden
@@ -26,13 +27,11 @@ export default function Hero() {
 
       <div className="relative grid flex-1 items-center gap-12 lg:grid-cols-[minmax(0,1fr)_minmax(0,0.95fr)]">
         <div>
-          <h1 className="fade-up text-[2rem] font-bold leading-[1.04] tracking-[-0.03em] text-white sm:text-5xl lg:text-[3.4rem]">
-            I reviewed 800+ pitch decks{" "}
-            <span className="font-serif font-normal italic">as a VC</span> and trained an AI on the
-            verdicts.
+          <h1 className="fade-up text-[2.5rem] font-bold leading-[1.02] tracking-[-0.035em] text-white sm:text-6xl lg:text-[4.25rem] xl:text-[5rem]">
+            Have your <RotatingWord words={SUBJECTS} className="text-accent-bright" /> reviewed by
+            a VC.
             <br />
-            Have your <RotatingWord words={REVIEWED} className="text-accent-bright" /> reviewed the
-            same way.
+            <span className="font-serif font-normal italic">Before</span> you pitch.
           </h1>
 
           <div className="fade-up mt-8 max-w-xl lg:mt-10" style={{ animationDelay: "0.12s" }}>

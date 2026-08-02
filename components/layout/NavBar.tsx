@@ -38,7 +38,14 @@ export default function NavBar() {
   }, []);
 
   return (
-    <nav className={"fixed inset-x-0 top-6 z-50 transition-[padding] duration-300 " + (onCard ? "px-9 sm:px-15" : "px-4")}>
+    // While merged into the card, the nav's gutter is the page gutter plus the
+    // card's own padding, so the logo lines up with the headline below it.
+    <nav
+      className={
+        "fixed inset-x-0 z-50 transition-[top,padding] duration-300 " +
+        (onCard ? "top-6 px-9 sm:top-10 sm:px-18" : "top-6 px-4")
+      }
+    >
       {/* Only background/border/shadow transition — animating the pill's size
           makes it jitter against the scroll. */}
       <div

@@ -8,7 +8,7 @@ export default function Home() {
   return (
     <div className="space-y-20">
       {/* The hero card runs edge to edge, inset by a gutter on all four sides. */}
-      <div className="p-3">
+      <div className="p-3 sm:p-6">
         <Hero />
       </div>
 
