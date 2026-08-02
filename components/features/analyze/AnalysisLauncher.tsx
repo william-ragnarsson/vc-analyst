@@ -9,6 +9,8 @@ type AnalysisLauncherProps = {
   tone?: "light" | "dark";
   /** Tighter dropzone, for when it shares a row with other content. */
   compact?: boolean;
+  /** `center` centres the run/abort button under the dropzone. */
+  align?: "left" | "center";
 };
 
 const TONES = {
@@ -30,9 +32,16 @@ const TONES = {
  * reads everything it needs from the analysis context, so the two call sites
  * stay in sync without prop drilling.
  */
-export default function AnalysisLauncher({ tone = "light", compact = false }: AnalysisLauncherProps) {
+export default function AnalysisLauncher({
+  tone = "light",
+  compact = false,
+  align = "left",
+}: AnalysisLauncherProps) {
   const { file, setFile, status, start, stop } = useAnalysis();
   const t = TONES[tone];
+  // Block layout, not flex: the dropzone must stay full-width, and flex children
+  // shrink to content under `items-start`. Only the button needs centring.
+  const button = align === "center" ? "mx-auto block" : "";
 
   if (status === "loading") {
     return (
@@ -40,7 +49,7 @@ export default function AnalysisLauncher({ tone = "light", compact = false }: An
         <CurrentAnalysisCard />
         <button
           onClick={stop}
-          className={`rounded-full border px-5 py-2.5 text-sm font-medium transition-colors ${t.abort}`}
+          className={`rounded-full border px-5 py-2.5 text-sm font-medium transition-colors ${button} ${t.abort}`}
         >
           Abort current analysis
         </button>
@@ -54,7 +63,7 @@ export default function AnalysisLauncher({ tone = "light", compact = false }: An
       <button
         onClick={() => start()}
         disabled={!file}
-        className={`rounded-full px-8 py-3.5 font-semibold transition-colors disabled:cursor-not-allowed disabled:opacity-25 ${t.run}`}
+        className={`rounded-full px-8 py-3.5 font-semibold transition-colors disabled:cursor-not-allowed disabled:opacity-25 ${button} ${t.run}`}
       >
         Run due diligence →
       </button>

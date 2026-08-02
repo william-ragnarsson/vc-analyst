@@ -55,7 +55,14 @@ function usePrefersReducedMotion(): boolean {
  * point the static version couldn't: answers arrive from three different places,
  * and the badges say which.
  */
-export default function MemoFillDemo() {
+export default function MemoFillDemo({
+  framed = true,
+  className = "",
+}: {
+  /** `false` strips the border and chrome so it can sit inside a larger artifact. */
+  framed?: boolean;
+  className?: string;
+} = {}) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [revealed, setRevealed] = useState(0);
   const [visible, setVisible] = useState(false);
@@ -68,8 +75,11 @@ export default function MemoFillDemo() {
   useEffect(() => {
     const node = containerRef.current;
     if (!node) return;
+    // threshold 0 rather than a fraction: the panel can be taller than a phone
+    // viewport, where a fractional threshold may never be satisfied and the
+    // rows would sit as skeletons forever.
     const observer = new IntersectionObserver(([entry]) => setVisible(entry.isIntersecting), {
-      threshold: 0.4,
+      threshold: 0,
     });
     observer.observe(node);
     return () => observer.disconnect();
@@ -86,19 +96,7 @@ export default function MemoFillDemo() {
     return () => clearTimeout(timer);
   }, [visible, revealed, reducedMotion]);
 
-  return (
-    <div
-      ref={containerRef}
-      className="overflow-hidden rounded-3xl border border-ink/15 bg-white/60 shadow-sm backdrop-blur"
-    >
-      <div className="flex items-center gap-2 border-b border-ink/10 bg-paper-2/60 px-4 py-2.5">
-        <span className="h-2 w-2 rounded-full bg-ink/15" />
-        <span className="h-2 w-2 rounded-full bg-ink/15" />
-        <span className="h-2 w-2 rounded-full bg-ink/15" />
-        <span className="ml-2 font-mono text-xs text-muted">due-diligence · acme.pdf</span>
-      </div>
-
-      {ROWS.map((row, i) => (
+  const rows = ROWS.map((row, i) => (
         <Row key={row.label} label={row.label}>
           {i < shown ? (
             // No key needed: this replaces the Skeleton element, so it mounts
@@ -111,7 +109,35 @@ export default function MemoFillDemo() {
             <Skeleton />
           )}
         </Row>
-      ))}
+  ));
+
+  // Unframed: the rows drop straight into a larger artifact that supplies its
+  // own chrome, so a second border would read as a box inside a box.
+  if (!framed) {
+    return (
+      <div ref={containerRef} className={className}>
+        {rows}
+      </div>
+    );
+  }
+
+  return (
+    <div
+      ref={containerRef}
+      // Solid, not translucent: it should read as a document sitting on the
+      // section, not as a tinted panel showing the surface through it.
+      className={
+        "overflow-hidden rounded-2xl border border-ink/12 bg-paper shadow-[0_24px_48px_-24px_rgba(20,19,15,0.35)] " +
+        className
+      }
+    >
+      <div className="flex items-center gap-2 border-b border-ink/10 bg-paper-2/60 px-4 py-2.5">
+        <span className="h-2 w-2 rounded-full bg-ink/15" />
+        <span className="h-2 w-2 rounded-full bg-ink/15" />
+        <span className="h-2 w-2 rounded-full bg-ink/15" />
+        <span className="ml-2 font-mono text-xs text-muted">due-diligence · acme.pdf</span>
+      </div>
+      {rows}
     </div>
   );
 }

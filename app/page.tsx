@@ -1,48 +1,48 @@
-import Link from "next/link";
 import Hero from "@/components/features/hero/Hero";
 import PitchPerspective from "@/components/features/landing/PitchPerspective";
-import PipelineStrip from "@/components/features/landing/PipelineStrip";
-import EngineSection from "@/components/features/landing/EngineSection";
+import ReportShowcase from "@/components/features/landing/ReportShowcase";
+import HowItWorks from "@/components/features/landing/HowItWorks";
 import ClosingCta from "@/components/features/landing/ClosingCta";
 
+/**
+ * Layout rule for this page — bands, not boxes:
+ *
+ * Below the hero there are NO section containers. Sections are separated by
+ * full-bleed tonal bands, hairline rules, and genuinely different layout shapes
+ * (2-col asymmetric / centred + wide artifact / 4-up row / centred column).
+ *
+ * A *product artifact* — the report in §02, the cards in §01 — may still be
+ * framed: that is content, not section chrome. Wrapping a section itself in a
+ * card is what made this page incoherent before; don't reintroduce it.
+ *
+ * Widths: the hero is full-bleed, everything else is max-w-6xl. Text blocks cap
+ * themselves internally rather than by changing the container.
+ */
 export default function Home() {
   return (
-    <div className="space-y-24">
-      {/* The hero card runs edge to edge, inset by a gutter on all four sides. */}
+    <div>
+      {/* The hero is the only card on the page. */}
       <div className="p-3 sm:p-6">
         <Hero />
       </div>
 
-      <div className="mx-auto max-w-5xl space-y-24 px-6">
+      <div className="mx-auto max-w-6xl px-6 py-24 sm:py-28">
         <PitchPerspective />
-        <PipelineStrip />
-        <EngineSection />
-
-        <section className="fade-up">
-          <Link
-            href="/playbook"
-            className="group block rounded-3xl border border-ink/15 bg-white/60 p-8 shadow-sm backdrop-blur transition-colors hover:border-ink/30"
-          >
-            <div className="flex items-start justify-between gap-6">
-              <div>
-                <div className="text-xs font-semibold uppercase tracking-[0.2em] text-accent">The rubric</div>
-                <p className="mt-2 text-xl font-bold tracking-tight text-ink">
-                  The exact criteria you&apos;re being judged against
-                </p>
-                <p className="mt-2 max-w-md leading-relaxed text-muted">
-                  Team discoverability, competitive honesty, deck basics. Written down from a year
-                  of weekly deal reviews, and still growing.
-                </p>
-              </div>
-              <span className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-ink text-lg text-paper transition-transform group-hover:rotate-12">
-                →
-              </span>
-            </div>
-          </Link>
-        </section>
       </div>
 
-      <div className="p-3 sm:p-6">
+      {/* Full-bleed band: the stage for the payoff. Translucent so the backdrop
+          dots still read faintly through it. */}
+      <div className="w-full border-y border-ink/8 bg-paper-2/60">
+        <div className="mx-auto max-w-6xl px-6 py-24 sm:py-28">
+          <ReportShowcase />
+        </div>
+      </div>
+
+      <div className="mx-auto max-w-6xl px-6 py-24 sm:py-28">
+        <HowItWorks />
+      </div>
+
+      <div className="mx-auto max-w-6xl px-6 pb-24 sm:pb-28">
         <ClosingCta />
       </div>
     </div>

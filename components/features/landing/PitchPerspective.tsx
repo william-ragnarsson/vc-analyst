@@ -1,36 +1,55 @@
-import FeedbackCardStack from "@/components/features/landing/FeedbackCardStack";
-import { DECK_CHECKLIST } from "@/lib/diligence/deck-checklist";
+import OutputCardStack from "@/components/features/landing/OutputCardStack";
+import SectionHeading from "@/components/features/landing/SectionHeading";
 
 /**
- * The value proposition: what a founder actually gets back. The checklist is the
- * real one the feedback stage grades against (see lib/diligence/deck-checklist.ts),
- * so the promise here and the product's behaviour are the same list.
+ * The problem, stated by contrast: the only feedback a founder actually gets —
+ * a flat, contentless pass — against the same decision reconstructed in full.
+ *
+ * The visual argument does the work: one drab card beside four rich ones. This
+ * section teases; §02 shows the report properly.
  */
 export default function PitchPerspective() {
   return (
     <section className="fade-up">
-      <h2 className="max-w-2xl text-3xl font-bold leading-[1.1] tracking-tight text-ink sm:text-4xl">
-        Prepare your pitch by getting the VC&apos;s perspective.
-      </h2>
-      <p className="mt-4 max-w-2xl text-lg leading-relaxed text-muted">
-        An investor checks ten things before deciding whether to reply. You get a straight answer
-        on each one, <span className="marker">including the ones your deck never mentions</span>.
-      </p>
+      <SectionHeading
+        index="01"
+        eyebrow="The problem"
+        title={
+          <>
+            The pass is two lines.{" "}
+            <span className="font-serif font-normal italic">
+              The reasoning behind it is two pages.
+            </span>
+          </>
+        }
+        sub="A partner forms a real opinion of your deck in minutes, against a rubric, and sends you almost none of it."
+      />
 
-      <div className="mt-12 grid items-center gap-12 lg:grid-cols-[minmax(0,1fr)_minmax(0,0.95fr)] lg:gap-16">
-        <ul className="grid gap-x-8 gap-y-4 sm:grid-cols-2">
-          {DECK_CHECKLIST.map((item) => (
-            <li key={item.label} className="flex gap-3">
-              <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-accent" />
-              <div>
-                <div className="font-semibold text-ink">{item.label}</div>
-                <div className="text-sm leading-relaxed text-muted">{item.hint}</div>
-              </div>
-            </li>
-          ))}
-        </ul>
+      <div className="mt-14 grid items-start gap-10 lg:grid-cols-[minmax(0,0.75fr)_minmax(0,1fr)] lg:gap-16">
+        <div>
+          <div className="mb-4 text-xs font-semibold uppercase tracking-[0.18em] text-muted">
+            What you get today
+          </div>
+          {/* Deliberately drab: flat, grey, no shadow. It has to look poor next
+              to the stack beside it — that contrast is the argument. */}
+          <div className="rounded-2xl border border-ink/10 bg-ink/[0.03] p-5">
+            <div className="border-b border-ink/8 pb-3 text-xs text-muted">
+              Re: Seed round — Acme
+            </div>
+            <p className="pt-3 text-sm leading-relaxed text-ink/55">
+              Thanks for sending this over. Not a fit for us right now, but do keep us posted as
+              things develop.
+            </p>
+            <p className="mt-4 text-sm text-ink/30">— and that&apos;s if they reply at all.</p>
+          </div>
+        </div>
 
-        <FeedbackCardStack />
+        <div>
+          <div className="mb-4 text-xs font-semibold uppercase tracking-[0.18em] text-accent">
+            What you get here
+          </div>
+          <OutputCardStack />
+        </div>
       </div>
     </section>
   );

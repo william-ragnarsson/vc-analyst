@@ -99,9 +99,17 @@ html, body {
 
 /* Page backdrop: fine dot grid on the paper, the light-side counterpart to
    .hero-grid. Sits in a fixed layer behind every page. */
+/* A hexagonal (triangular) dot lattice rather than a square one: two identical
+   layers, the second offset by half a tile on both axes. The rows stagger, so
+   the implied lines run at 60° instead of 90° and it reads softer than graph
+   paper. Tile height is the 22px spacing × √3, which is what makes the
+   neighbour distances equal in every direction. */
 .dot-grid {
-  background-image: radial-gradient(rgba(20, 19, 15, 0.085) 1px, transparent 1px);
-  background-size: 22px 22px;
+  background-image:
+    radial-gradient(rgba(20, 19, 15, 0.085) 1px, transparent 1px),
+    radial-gradient(rgba(20, 19, 15, 0.085) 1px, transparent 1px);
+  background-size: 22px 38.1px;
+  background-position: 0 0, 11px 19.05px;
 }
 
 /* Hero: faint grid inside the dark card, faded out toward the edges. */
