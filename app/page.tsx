@@ -7,8 +7,8 @@ import FeedbackPreview from "@/components/features/landing/FeedbackPreview";
 export default function Home() {
   return (
     <div className="space-y-20">
-      {/* The hero card runs wider than the rest of the page. */}
-      <div className="mx-auto max-w-6xl px-4">
+      {/* The hero card runs edge to edge, inset by a gutter on all four sides. */}
+      <div className="p-3">
         <Hero />
       </div>
 

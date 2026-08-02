@@ -108,7 +108,7 @@ export default function Dropzone({
         disabled={disabled}
         onClick={() => inputRef.current?.click()}
         className={`w-full rounded-3xl text-center transition-colors disabled:cursor-not-allowed ${t.surface} ${
-          compact ? "px-6 py-8" : "px-8 py-14"
+          compact ? "px-6 py-7 sm:py-8" : "px-8 py-14"
         }`}
       >
         <input

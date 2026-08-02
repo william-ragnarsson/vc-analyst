@@ -52,7 +52,7 @@ export default function HeroReportMock() {
       <div className="pointer-events-none absolute inset-8 rounded-full bg-accent-bright/20 blur-3xl" />
 
       <div className="hero-float relative">
-        <div className="w-[560px] rotate-[-3deg] overflow-hidden rounded-2xl border border-white/15 bg-paper shadow-[0_40px_70px_-20px_rgba(0,0,0,0.55)]">
+        <div className="w-[600px] translate-x-10 rotate-[-3deg] overflow-hidden rounded-2xl border border-white/15 bg-paper shadow-[0_40px_70px_-20px_rgba(0,0,0,0.55)] xl:w-[680px]">
           <div className="flex items-center gap-2 border-b border-ink/10 bg-paper-2/60 px-4 py-2.5">
             <span className="h-2 w-2 rounded-full bg-ink/15" />
             <span className="h-2 w-2 rounded-full bg-ink/15" />
@@ -70,7 +70,7 @@ export default function HeroReportMock() {
 
         {/* Scorecard chip overlapping the corner — the same depth trick the
             reference sites use to stop the panel reading as a flat screenshot. */}
-        <div className="absolute -bottom-6 -left-10 rotate-[-3deg] rounded-2xl border border-ink/10 bg-white px-4 py-3 shadow-[0_20px_40px_-12px_rgba(0,0,0,0.45)]">
+        <div className="absolute -bottom-10 -left-12 rotate-[-3deg] rounded-2xl border border-ink/10 bg-white px-4 py-3 shadow-[0_20px_40px_-12px_rgba(0,0,0,0.45)]">
           <div className="text-[10px] font-semibold uppercase tracking-[0.15em] text-muted">
             Team credibility
           </div>
