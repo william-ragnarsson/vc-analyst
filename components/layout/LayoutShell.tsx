@@ -28,6 +28,12 @@ export default function LayoutShell({ children }: { children: React.ReactNode })
       }
     >
       <NavBar />
+      {/* The nav is `fixed`, so it contributes no height. This spacer stands in
+          for it *in the flow*, which keeps the report page's h-dvh arithmetic
+          above intact — padding on `main` would push the inner scroll box past
+          the viewport and produce the second scrollbar that lock exists to
+          avoid. */}
+      <div aria-hidden className="h-20 shrink-0" />
       {/* Pages set their own max-width — the report page needs to run wider. */}
       <main className={"min-h-0 flex-1 " + (isReportPage ? "" : "pb-24")}>{children}</main>
       {!isReportPage && <Footer />}
