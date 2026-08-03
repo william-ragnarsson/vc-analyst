@@ -2,54 +2,57 @@ import OutputCardStack from "@/components/features/landing/OutputCardStack";
 import SectionHeading from "@/components/features/landing/SectionHeading";
 
 /**
- * The problem, stated by contrast: the only feedback a founder actually gets —
- * a flat, contentless pass — against the same decision reconstructed in full.
+ * The value proposition: VCs evaluate against a system, and this hands you that
+ * system before you pitch.
  *
- * The visual argument does the work: one drab card beside four rich ones. This
- * section teases; §02 shows the report properly.
+ * The three questions are the promise stated as questions the context database
+ * can answer — concrete enough to be worth something, without claiming to know
+ * findings about a deck nobody has uploaded yet.
  */
+const QUESTIONS = [
+  "What do investors actually look for?",
+  "What makes a deck more fundable?",
+  "What reads as an immediate red flag?",
+];
+
 export default function PitchPerspective() {
   return (
     <section className="fade-up">
       <SectionHeading
-        index="01"
-        eyebrow="The problem"
         title={
           <>
-            The pass is two lines.{" "}
-            <span className="font-serif font-normal italic">
-              The reasoning behind it is two pages.
-            </span>
+            Make your pitch ironclad.{" "}
+            <span className="font-serif font-normal italic">Get your funding.</span>
           </>
         }
-        sub="A partner forms a real opinion of your deck in minutes, against a rubric, and sends you almost none of it."
       />
 
-      <div className="mt-14 grid items-start gap-10 lg:grid-cols-[minmax(0,0.75fr)_minmax(0,1fr)] lg:gap-16">
+      {/* Centred, not top-aligned: the card stack is ~180px taller than this
+          column, and top-aligning dumps all of that slack into one corner. */}
+      <div className="mt-12 grid items-center gap-12 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] lg:gap-20">
         <div>
-          <div className="mb-4 text-xs font-semibold uppercase tracking-[0.18em] text-muted">
-            What you get today
-          </div>
-          {/* Deliberately drab: flat, grey, no shadow. It has to look poor next
-              to the stack beside it — that contrast is the argument. */}
-          <div className="rounded-2xl border border-ink/10 bg-ink/[0.03] p-5">
-            <div className="border-b border-ink/8 pb-3 text-xs text-muted">
-              Re: Seed round — Acme
-            </div>
-            <p className="pt-3 text-sm leading-relaxed text-ink/55">
-              Thanks for sending this over. Not a fit for us right now, but do keep us posted as
-              things develop.
-            </p>
-            <p className="mt-4 text-sm text-ink/30">— and that&apos;s if they reply at all.</p>
-          </div>
+          <p className="max-w-2xl text-lg leading-relaxed text-muted">
+            VC firms run an investment system to evaluate hundreds of startups every week. Prepare
+            your pitch against that same system, drawn from{" "}
+            <span className="marker">a proprietary database of real deal reviews</span>.
+          </p>
+
+          {/* `divide-y` puts rules only *between* items. A border above the
+              first and below the last makes a three-item list read as a
+              fragment of a cut-off table. */}
+          <ul className="mt-10 divide-y divide-ink/10">
+            {QUESTIONS.map((q) => (
+              <li
+                key={q}
+                className="py-5 text-xl font-medium leading-snug tracking-tight text-ink first:pt-0 last:pb-0"
+              >
+                {q}
+              </li>
+            ))}
+          </ul>
         </div>
 
-        <div>
-          <div className="mb-4 text-xs font-semibold uppercase tracking-[0.18em] text-accent">
-            What you get here
-          </div>
-          <OutputCardStack />
-        </div>
+        <OutputCardStack />
       </div>
     </section>
   );

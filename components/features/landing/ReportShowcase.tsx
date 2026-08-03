@@ -66,8 +66,6 @@ export default function ReportShowcase() {
     <section className="fade-up">
       <SectionHeading
         align="center"
-        index="02"
-        eyebrow="What you get back"
         title="The write-up they'd never send you."
         sub="A verdict with a probability behind it, a worksheet where every answer says where it came from, and a straight critique of the deck itself."
       />

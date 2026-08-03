@@ -4,20 +4,17 @@ import { useEffect, useRef, useState } from "react";
 import { SEVERITY_META } from "@/components/features/form/severityMeta";
 
 /**
- * A fanned hand of the four kinds of thing the engine hands back — one card per
- * category named in the copy beside it, in the same order, so the list and the
- * stack read as the same four ideas.
- *
- * Illustrative content, but every card mirrors a real output surface: deck
- * feedback items, a web-visibility research note, and the invest verdict.
+ * A fanned hand of feedback, teasing what comes back. Illustrative content, but
+ * the card shape and severity colours are the real ones from `DeckFeedbackPanel`,
+ * so this can't drift into showing a UI the product doesn't have.
  */
 
 // Small rotations and a shallow overlap: only the card edge tucks under its
 // neighbour, never the text. Hover pulls them apart along their own axes.
 const CARDS = [
-  { key: "deck", tilt: "-rotate-[2.5deg]", x: "-translate-x-3", spread: "group-hover:-translate-x-8 group-hover:-translate-y-2" },
-  { key: "visibility", tilt: "rotate-[1.5deg]", x: "translate-x-4", spread: "group-hover:translate-x-8 group-hover:-translate-y-1" },
-  { key: "fundability", tilt: "-rotate-[1deg]", x: "-translate-x-1", spread: "group-hover:-translate-x-6 group-hover:translate-y-1" },
+  { key: "strength", tilt: "-rotate-[2.5deg]", x: "-translate-x-3", spread: "group-hover:-translate-x-8 group-hover:-translate-y-2" },
+  { key: "deck", tilt: "rotate-[1.5deg]", x: "translate-x-4", spread: "group-hover:translate-x-8 group-hover:-translate-y-1" },
+  { key: "visibility", tilt: "-rotate-[1deg]", x: "-translate-x-1", spread: "group-hover:-translate-x-6 group-hover:translate-y-1" },
   { key: "shortcomings", tilt: "rotate-[2.5deg]", x: "translate-x-3", spread: "group-hover:translate-x-9 group-hover:translate-y-2" },
 ] as const;
 
@@ -38,7 +35,7 @@ function FeedbackBody({
   title,
   detail,
 }: {
-  severity: "critical" | "warning";
+  severity: "critical" | "warning" | "strength";
   category: string;
   title: string;
   detail: string;
@@ -62,29 +59,17 @@ function FeedbackBody({
   );
 }
 
-function Stars({ value }: { value: number }) {
-  return (
-    <span className="inline-flex gap-0.5">
-      {[1, 2, 3, 4, 5].map((n) => (
-        <svg
-          key={n}
-          viewBox="0 0 24 24"
-          className={`h-3.5 w-3.5 ${n <= value ? "text-accent" : "text-ink/20"}`}
-          fill={n <= value ? "currentColor" : "none"}
-          stroke="currentColor"
-          strokeWidth="1.5"
-        >
-          <path
-            d="M12 2.5l2.9 5.9 6.5.95-4.7 4.58 1.1 6.47L12 17.9l-5.8 3.06 1.1-6.47L2.6 9.9l6.5-.95L12 2.5z"
-            strokeLinejoin="round"
-          />
-        </svg>
-      ))}
-    </span>
-  );
-}
-
 const BODIES: Record<string, React.ReactNode> = {
+  strength: (
+    <Shell label="What's working">
+      <FeedbackBody
+        severity="strength"
+        category="Traction"
+        title="Leads with revenue, not signups"
+        detail="Real numbers in the first third of the deck. Keep this slide where it is."
+      />
+    </Shell>
+  ),
   deck: (
     <Shell label="Your pitch deck">
       <FeedbackBody
@@ -107,26 +92,6 @@ const BODIES: Record<string, React.ReactNode> = {
           <span className="text-ink/80">No press, no funding on record. An investor reads that silence.</span>
         </li>
       </ul>
-    </Shell>
-  ),
-  fundability: (
-    <Shell label="Fundability">
-      <div className="flex items-baseline gap-3">
-        <span className="text-2xl font-bold tracking-tight text-accent">Invest</span>
-        <span className="font-mono text-sm tabular-nums text-muted">68% confidence</span>
-      </div>
-      <div className="mt-3 space-y-1.5">
-        {[
-          ["Team", 4],
-          ["Market size", 4],
-          ["Competitive advantage", 2],
-        ].map(([label, score]) => (
-          <div key={label as string} className="flex items-center justify-between gap-3">
-            <span className="text-xs text-muted">{label}</span>
-            <Stars value={score as number} />
-          </div>
-        ))}
-      </div>
     </Shell>
   ),
   shortcomings: (

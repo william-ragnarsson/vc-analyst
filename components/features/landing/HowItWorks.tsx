@@ -32,8 +32,6 @@ export default function HowItWorks() {
   return (
     <section className="fade-up">
       <SectionHeading
-        index="03"
-        eyebrow="How it works"
         title="Four systems, not one prompt."
         sub="Most 'AI feedback' is a single call to a chatbot that has never seen a term sheet."
       />
