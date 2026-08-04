@@ -5,6 +5,7 @@
   --paper: #f6f4ee;
   --paper-2: #efece2;
   --ink: #14130f;
+  --ink-2: #22201a;
   --muted: #54514a;
   --accent: #1a6b3f;
   --accent-bright: #34d17a;
@@ -13,7 +14,9 @@
 
 @theme inline {
   --color-paper: var(--paper);
+  --color-paper-2: var(--paper-2);
   --color-ink: var(--ink);
+  --color-ink-2: var(--ink-2);
   --color-muted: var(--muted);
   --color-accent: var(--accent);
   --color-accent-bright: var(--accent-bright);
@@ -78,3 +81,69 @@ html, body {
 }
 .dash-rect { transition: stroke 0.2s ease; }
 .dash-active .dash-rect { animation: dash-march 1.2s linear infinite; }
+
+/* Hero: the word that swaps in the headline. Words are grid-stacked so the slot
+   is always as wide as the longest one — the line never reflows mid-rotation. */
+@keyframes word-in {
+  from { opacity: 0; transform: translateY(0.45em); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.word-in { animation: word-in 0.38s cubic-bezier(0.16, 1, 0.3, 1) both; }
+
+/* Hero: slow drift on the floating report mock. */
+@keyframes hero-float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-10px); }
+}
+.hero-float { animation: hero-float 7s ease-in-out infinite; }
+
+/* Closing CTA: a slow accent bloom behind the dropzone, so the one thing on the
+   page you're meant to click has some light on it. It only works because that
+   dropzone is `elevated`, i.e. opaque: behind the default translucent surface
+   the colour comes through the panel and stains it grey-green instead of
+   haloing it. Its own layer rather than a box-shadow, because the dropzone's
+   dashed border is an SVG overlay that would clip a shadow. */
+@keyframes cta-glow {
+  0%, 100% { opacity: 0.5; transform: scale(0.97); }
+  50% { opacity: 1; transform: scale(1.03); }
+}
+.cta-glow { animation: cta-glow 6s ease-in-out infinite; }
+
+/* Page backdrop: fine dot grid on the paper, the light-side counterpart to
+   .hero-grid. Sits in a fixed layer behind every page. */
+/* A hexagonal (triangular) dot lattice rather than a square one: two identical
+   layers, the second offset by half a tile on both axes. The rows stagger, so
+   the implied lines run at 60° instead of 90° and it reads softer than graph
+   paper. Tile height is the 22px spacing × √3, which is what makes the
+   neighbour distances equal in every direction. */
+.dot-grid {
+  background-image:
+    radial-gradient(rgba(20, 19, 15, 0.085) 1px, transparent 1px),
+    radial-gradient(rgba(20, 19, 15, 0.085) 1px, transparent 1px);
+  background-size: 22px 38.1px;
+  background-position: 0 0, 11px 19.05px;
+}
+
+/* Hero: faint grid inside the dark card, faded out toward the edges. */
+.hero-grid {
+  background-image:
+    linear-gradient(to right, rgba(255, 255, 255, 0.045) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(255, 255, 255, 0.045) 1px, transparent 1px);
+  background-size: 48px 48px;
+  mask-image: radial-gradient(ellipse 80% 70% at 30% 20%, #000 0%, transparent 100%);
+  -webkit-mask-image: radial-gradient(ellipse 80% 70% at 30% 20%, #000 0%, transparent 100%);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .marker,
+  .fade-up,
+  .word-in,
+  .hero-float,
+  .cta-glow,
+  .cell-pop,
+  .animate-blink,
+  .dash-active .dash-rect {
+    animation: none !important;
+  }
+  .marker { background-size: 100% 100%; }
+}

@@ -7,7 +7,43 @@ type DropzoneProps = {
   onFile: (file: File | null) => void;
   accept?: string;
   disabled?: boolean;
+  /** `dark` inverts the palette for the hero card's dark surface. */
+  tone?: "light" | "dark";
+  /** Tighter padding, for when the dropzone sits beside other content. */
+  compact?: boolean;
+  /**
+   * Opaque and lifted, for when the dropzone is the focal point of its section
+   * rather than one control among several. The default translucent surface
+   * picks up whatever sits behind it, which reads as grubby when it's meant to
+   * be the thing you look at. Light tone only — the dark card has no use for it.
+   */
+  elevated?: boolean;
 };
+
+const TONES = {
+  light: {
+    surface: "bg-white/55 backdrop-blur hover:bg-white/80",
+    surfaceElevated:
+      "bg-white shadow-[0_40px_80px_-40px_rgba(20,19,15,0.45)] hover:shadow-[0_48px_90px_-40px_rgba(20,19,15,0.5)]",
+    dash: "text-ink/20",
+    dashActive: "text-accent",
+    icon: "bg-ink/5 text-ink",
+    iconDone: "bg-accent/10 text-accent",
+    title: "text-ink",
+    hint: "text-muted",
+    error: "text-red-600",
+  },
+  dark: {
+    surface: "bg-white/[0.04] hover:bg-white/[0.08]",
+    dash: "text-white/20",
+    dashActive: "text-accent-bright",
+    icon: "bg-white/10 text-white",
+    iconDone: "bg-accent-bright/15 text-accent-bright",
+    title: "text-white",
+    hint: "text-white/60",
+    error: "text-red-400",
+  },
+} as const;
 
 // Vercel's serverless functions cap request bodies at ~4.5MB regardless of
 // Next.js config, so we reject oversized files here instead of letting the
@@ -23,10 +59,17 @@ export default function Dropzone({
   onFile,
   accept = "application/pdf",
   disabled = false,
+  tone = "light",
+  compact = false,
+  elevated = false,
 }: DropzoneProps) {
   const [dragging, setDragging] = useState(false);
   const [error, setError] = useState("");
   const inputRef = useRef<HTMLInputElement>(null);
+  const t = TONES[tone];
+  const iconSize = compact ? "h-10 w-10" : "h-12 w-12";
+  // `surfaceElevated` only exists on the light tone; the dark card keeps its own.
+  const surface = elevated && "surfaceElevated" in t ? t.surfaceElevated : t.surface;
 
   function pick(f: File | null | undefined) {
     if (disabled) return;
@@ -35,7 +78,7 @@ export default function Dropzone({
       return onFile(null);
     }
     if (accept && !f.type.match(accept.replace("*", ".*"))) {
-      setError("Unsupported file type — upload a PDF.");
+      setError("Unsupported file type. Upload a PDF.");
       return;
     }
     if (f.size > MAX_SIZE_MB * 1024 * 1024) {
@@ -68,7 +111,7 @@ export default function Dropzone({
           stroke="currentColor"
           strokeWidth="2"
           strokeDasharray="8 8"
-          className={`dash-rect ${dragging ? "text-accent" : "text-ink/20"}`}
+          className={`dash-rect ${dragging ? t.dashActive : t.dash}`}
         />
       </svg>
 
@@ -76,7 +119,9 @@ export default function Dropzone({
         type="button"
         disabled={disabled}
         onClick={() => inputRef.current?.click()}
-        className="w-full rounded-3xl bg-white/55 px-8 py-14 text-center backdrop-blur transition-colors hover:bg-white/80 disabled:cursor-not-allowed"
+        className={`w-full rounded-3xl text-center transition-all disabled:cursor-not-allowed ${surface} ${
+          compact ? "px-6 py-7 sm:py-8" : "px-8 py-14"
+        }`}
       >
         <input
           ref={inputRef}
@@ -87,15 +132,15 @@ export default function Dropzone({
         />
         {file ? (
           <div className="space-y-2">
-            <div className="mx-auto grid h-12 w-12 place-items-center rounded-2xl bg-accent/10 text-xl text-accent">✓</div>
-            <p className="font-semibold text-ink">{file.name}</p>
-            <p className="text-sm text-muted">{(file.size / 1024 / 1024).toFixed(1)} MB · ready to analyze</p>
+            <div className={`mx-auto grid place-items-center rounded-2xl text-xl ${t.iconDone} ${iconSize}`}>✓</div>
+            <p className={`truncate font-semibold ${t.title}`}>{file.name}</p>
+            <p className={`text-sm ${t.hint}`}>{(file.size / 1024 / 1024).toFixed(1)} MB · ready to analyze</p>
           </div>
         ) : (
           <div className="space-y-2">
-            <div className="mx-auto grid h-12 w-12 place-items-center rounded-2xl bg-ink/5 text-xl text-ink">↑</div>
-            <p className="text-lg font-semibold text-ink">Drop your pitch deck</p>
-            <p className={`text-sm ${error ? "text-red-600" : "text-muted"}`}>
+            <div className={`mx-auto grid place-items-center rounded-2xl text-xl ${t.icon} ${iconSize}`}>↑</div>
+            <p className={`text-lg font-semibold ${t.title}`}>Drop your pitch deck</p>
+            <p className={`text-sm ${error ? t.error : t.hint}`}>
               {error || `PDF · up to ${MAX_SIZE_MB}MB · click or drag`}
             </p>
           </div>

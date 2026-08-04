@@ -38,7 +38,7 @@ export default function PlaybookPage() {
       <header className="pt-10 sm:pt-14 space-y-5">
         <Link href="/" className="text-sm text-muted hover:text-ink transition-colors">← Back</Link>
         <div className="inline-flex items-center gap-2 rounded-full border border-ink/10 bg-paper/60 backdrop-blur px-3 py-1 text-xs font-medium text-accent uppercase tracking-[0.2em]">
-          The Playbook
+          Context database
         </div>
         <h1 className="text-4xl sm:text-5xl font-bold tracking-[-0.03em] leading-[1] text-ink">
           How I evaluated <span className="marker">800+ decks</span>

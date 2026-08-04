@@ -1,24 +1,14 @@
 "use client";
 
 import Card from "@/components/ui/Card";
-import type { DeckFeedbackItem, DeckFeedbackSeverity } from "@/lib/diligence/types";
+import { SEVERITY_META, SEVERITY_ORDER } from "@/components/features/form/severityMeta";
+import type { DeckFeedbackItem } from "@/lib/diligence/types";
 
 /**
  * A critique of the pitch deck itself — gaps, weaknesses, and strengths,
  * grounded in the playbook and research signals. Sits directly under the
  * verdict banner since it's a headline output, not part of the DD document.
  */
-
-const SEVERITY_META: Record<
-  DeckFeedbackSeverity,
-  { label: string; dot: string; badge: string }
-> = {
-  critical: { label: "Critical", dot: "bg-red-600", badge: "bg-red-500/15 text-red-700" },
-  warning: { label: "Warning", dot: "bg-amber-500", badge: "bg-amber-500/20 text-amber-700" },
-  strength: { label: "Strength", dot: "bg-accent", badge: "bg-accent/15 text-accent" },
-};
-
-const SEVERITY_ORDER: DeckFeedbackSeverity[] = ["critical", "warning", "strength"];
 
 function FeedbackCard({ item }: { item: DeckFeedbackItem }) {
   const meta = SEVERITY_META[item.severity];

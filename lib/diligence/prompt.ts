@@ -1,3 +1,4 @@
+import { formatDeckChecklist } from "./deck-checklist";
 import { FIELD_DESCRIPTORS } from "./form-schema";
 import type { ResearchResult } from "./types";
 import type { SystemPrompt } from "@/lib/llm/types";
@@ -184,17 +185,11 @@ Now output the scorecard JSON object.`;
  * Standard slides/topics a VC expects in a pitch deck. Used as a guess-fill
  * backbone alongside the playbook (which is still thin) so feedback isn't
  * limited to what William has written down so far.
+ *
+ * Built from the shared list in `deck-checklist.ts` so the homepage can show
+ * founders the same ten items this stage actually grades against.
  */
-const EXPECTED_DECK_CHECKLIST = `- Problem - a clear, specific problem worth solving.
-- Solution - the product and why it solves the problem.
-- Market size / why now - TAM/SAM/SOM or credible market sizing, and why this moment.
-- Business & revenue model - how the company makes money.
-- Traction - customers, revenue, pilots, LOIs, usage, growth.
-- Competition - an honest competitors slide with clear differentiation.
-- Team - founders, roles, backgrounds, and why they're the ones to win.
-- Go-to-market - target customers and channels to reach them.
-- The ask / use of funds - how much is being raised and what it funds.
-- Product / demo - evidence the product actually works (screenshots, demo, video).`;
+const EXPECTED_DECK_CHECKLIST = formatDeckChecklist();
 
 /**
  * Deck-critique stage. Reviews the deck (plus research signals) against
