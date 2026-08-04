@@ -9,7 +9,8 @@ import { useAnalysis } from "@/components/features/analyze/AnalysisProvider";
 const LINKS = [
   { href: "/", label: "Home" },
   { href: "/due-diligence", label: "Due Diligence" },
-  { href: "/playbook", label: "Playbook" },
+  // The route keeps its original name; only the label changed.
+  { href: "/playbook", label: "Context" },
 ];
 
 /**
@@ -94,7 +95,10 @@ export default function NavBar() {
                 key={link.href}
                 href={link.href}
                 className={
-                  "shrink-0 rounded-full px-3 py-1.5 text-sm font-medium transition-colors duration-300 " +
+                  // Tighter padding below `sm`: the links are `shrink-0`, so at
+                  // 375px the three of them plus the logo overflowed the pill
+                  // and the last one was clipped by its own rounded edge.
+                  "shrink-0 rounded-full px-2 py-1.5 text-sm font-medium transition-colors duration-300 sm:px-3 " +
                   (onCard
                     ? isActive
                       ? "bg-white/10 text-white"

@@ -87,7 +87,7 @@ export default function VerdictPopup({
               href="/playbook"
               className="font-medium text-ink underline decoration-marker decoration-2 underline-offset-2 transition-colors hover:decoration-accent"
             >
-              the playbook
+              the context database
             </Link>
           </p>
         )}

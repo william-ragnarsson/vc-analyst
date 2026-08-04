@@ -97,6 +97,18 @@ html, body {
 }
 .hero-float { animation: hero-float 7s ease-in-out infinite; }
 
+/* Closing CTA: a slow accent bloom behind the dropzone, so the one thing on the
+   page you're meant to click has some light on it. It only works because that
+   dropzone is `elevated`, i.e. opaque: behind the default translucent surface
+   the colour comes through the panel and stains it grey-green instead of
+   haloing it. Its own layer rather than a box-shadow, because the dropzone's
+   dashed border is an SVG overlay that would clip a shadow. */
+@keyframes cta-glow {
+  0%, 100% { opacity: 0.5; transform: scale(0.97); }
+  50% { opacity: 1; transform: scale(1.03); }
+}
+.cta-glow { animation: cta-glow 6s ease-in-out infinite; }
+
 /* Page backdrop: fine dot grid on the paper, the light-side counterpart to
    .hero-grid. Sits in a fixed layer behind every page. */
 /* A hexagonal (triangular) dot lattice rather than a square one: two identical
@@ -127,6 +139,7 @@ html, body {
   .fade-up,
   .word-in,
   .hero-float,
+  .cta-glow,
   .cell-pop,
   .animate-blink,
   .dash-active .dash-rect {

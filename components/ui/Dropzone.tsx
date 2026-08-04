@@ -11,11 +11,20 @@ type DropzoneProps = {
   tone?: "light" | "dark";
   /** Tighter padding, for when the dropzone sits beside other content. */
   compact?: boolean;
+  /**
+   * Opaque and lifted, for when the dropzone is the focal point of its section
+   * rather than one control among several. The default translucent surface
+   * picks up whatever sits behind it, which reads as grubby when it's meant to
+   * be the thing you look at. Light tone only — the dark card has no use for it.
+   */
+  elevated?: boolean;
 };
 
 const TONES = {
   light: {
     surface: "bg-white/55 backdrop-blur hover:bg-white/80",
+    surfaceElevated:
+      "bg-white shadow-[0_40px_80px_-40px_rgba(20,19,15,0.45)] hover:shadow-[0_48px_90px_-40px_rgba(20,19,15,0.5)]",
     dash: "text-ink/20",
     dashActive: "text-accent",
     icon: "bg-ink/5 text-ink",
@@ -52,12 +61,15 @@ export default function Dropzone({
   disabled = false,
   tone = "light",
   compact = false,
+  elevated = false,
 }: DropzoneProps) {
   const [dragging, setDragging] = useState(false);
   const [error, setError] = useState("");
   const inputRef = useRef<HTMLInputElement>(null);
   const t = TONES[tone];
   const iconSize = compact ? "h-10 w-10" : "h-12 w-12";
+  // `surfaceElevated` only exists on the light tone; the dark card keeps its own.
+  const surface = elevated && "surfaceElevated" in t ? t.surfaceElevated : t.surface;
 
   function pick(f: File | null | undefined) {
     if (disabled) return;
@@ -66,7 +78,7 @@ export default function Dropzone({
       return onFile(null);
     }
     if (accept && !f.type.match(accept.replace("*", ".*"))) {
-      setError("Unsupported file type — upload a PDF.");
+      setError("Unsupported file type. Upload a PDF.");
       return;
     }
     if (f.size > MAX_SIZE_MB * 1024 * 1024) {
@@ -107,7 +119,7 @@ export default function Dropzone({
         type="button"
         disabled={disabled}
         onClick={() => inputRef.current?.click()}
-        className={`w-full rounded-3xl text-center transition-colors disabled:cursor-not-allowed ${t.surface} ${
+        className={`w-full rounded-3xl text-center transition-all disabled:cursor-not-allowed ${surface} ${
           compact ? "px-6 py-7 sm:py-8" : "px-8 py-14"
         }`}
       >

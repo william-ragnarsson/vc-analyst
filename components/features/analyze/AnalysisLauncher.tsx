@@ -11,6 +11,8 @@ type AnalysisLauncherProps = {
   compact?: boolean;
   /** `center` centres the run/abort button under the dropzone. */
   align?: "left" | "center";
+  /** Opaque, lifted dropzone — see `Dropzone`. Light tone only. */
+  elevated?: boolean;
 };
 
 const TONES = {
@@ -36,6 +38,7 @@ export default function AnalysisLauncher({
   tone = "light",
   compact = false,
   align = "left",
+  elevated = false,
 }: AnalysisLauncherProps) {
   const { file, setFile, status, start, stop } = useAnalysis();
   const t = TONES[tone];
@@ -59,7 +62,7 @@ export default function AnalysisLauncher({
 
   return (
     <div className="space-y-4">
-      <Dropzone file={file} onFile={setFile} tone={tone} compact={compact} />
+      <Dropzone file={file} onFile={setFile} tone={tone} compact={compact} elevated={elevated} />
       <button
         onClick={() => start()}
         disabled={!file}

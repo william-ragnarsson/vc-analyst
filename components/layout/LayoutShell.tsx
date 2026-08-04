@@ -40,9 +40,16 @@ export default function LayoutShell({ children }: { children: React.ReactNode })
             and reserves the clearance in its own padding, because the nav sits
             inside the card until you scroll. */}
         {!isHome && <div aria-hidden className="h-20 shrink-0" />}
-        {/* Pages set their own max-width — the report page needs to run wider. */}
-        <main className={"min-h-0 flex-1 " + (isReportPage ? "" : "pb-24")}>{children}</main>
-        {!isReportPage && <Footer />}
+        {/* Pages set their own max-width — the report page needs to run wider.
+            The trailing padding is for pages that end on bare paper and would
+            otherwise run their last line into the footer rule. The home page
+            ends in a full-bleed band that carries its own generous padding, so
+            adding this on top leaves an empty strip below the band — the band
+            butts straight up against the footer instead. */}
+        <main className={"min-h-0 flex-1 " + (isReportPage || isHome ? "" : "pb-24")}>
+          {children}
+        </main>
+        {!isReportPage && <Footer flush={isHome} />}
       </div>
     </>
   );
