@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useAnalysis } from "@/components/features/analyze/AnalysisProvider";
+import UserMenu from "@/components/features/auth/UserMenu";
 
 const LINKS = [
   { href: "/", label: "Home" },
@@ -112,6 +113,8 @@ export default function NavBar() {
               </Link>
             );
           })}
+          <span className="mx-1 hidden h-5 w-px shrink-0 bg-current opacity-15 sm:block" />
+          <UserMenu onCard={onCard} />
         </div>
       </div>
     </nav>

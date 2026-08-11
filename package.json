@@ -11,6 +11,8 @@
   "dependencies": {
     "@anthropic-ai/sdk": "0.105.0",
     "@google/genai": "2.9.0",
+    "@supabase/ssr": "0.12.4",
+    "@supabase/supabase-js": "2.112.2",
     "@tailwindcss/typography": "0.5.20",
     "next": "16.2.9",
     "onnxruntime-node": "1.27.0",

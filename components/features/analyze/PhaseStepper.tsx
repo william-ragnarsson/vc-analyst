@@ -1,6 +1,6 @@
 "use client";
 
-import type { Step } from "./streamState";
+import type { Step } from "@/lib/diligence/stream-state";
 import { formatElapsed, useElapsed } from "./elapsed";
 
 function StepDot({ status }: { status: Step["status"] }) {

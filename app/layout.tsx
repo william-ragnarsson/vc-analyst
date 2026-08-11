@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono, Instrument_Serif } from "next/font/google";
 import LayoutShell from "@/components/layout/LayoutShell";
 import AnalysisProvider from "@/components/features/analyze/AnalysisProvider";
+import AuthProvider from "@/components/features/auth/AuthProvider";
 import "./globals.css";
 
 const geistSans = Geist({ variable: "--font-geist-sans", subsets: ["latin"] });
@@ -44,9 +45,16 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       className={`${geistSans.variable} ${geistMono.variable} ${instrumentSerif.variable} antialiased`}
     >
       <body className="relative min-h-screen overflow-x-hidden">
-        <AnalysisProvider>
-          <LayoutShell>{children}</LayoutShell>
-        </AnalysisProvider>
+        {/* Auth wraps analysis: starting a run needs a user, so AnalysisProvider
+            consumes useAuth(). This layout stays a static server component —
+            the session is read client-side, which keeps the landing page
+            statically rendered. Nothing here is gated, so there's no need to
+            know who the user is before the first paint. */}
+        <AuthProvider>
+          <AnalysisProvider>
+            <LayoutShell>{children}</LayoutShell>
+          </AnalysisProvider>
+        </AuthProvider>
       </body>
     </html>
   );

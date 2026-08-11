@@ -33,6 +33,48 @@ export function getGeminiApiKey(): string {
   return key;
 }
 
+// ───────────────────────────── Supabase ─────────────────────────────
+//
+// Both are public by design (a publishable key is safe in the browser — Row-Level
+// Security is what actually protects the data), so they're NEXT_PUBLIC_ and
+// read directly in client components too. These getters exist for server code
+// and to give one clear error message when the project isn't configured.
+//
+// The key is Supabase's `sb_publishable_…`, which replaces the legacy `anon` JWT.
+// Never the `sb_secret_…` / `service_role` key: those bypass RLS, and nothing in
+// this app needs to.
+
+export function getSupabaseUrl(): string {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  if (!url) {
+    throw new Error(
+      "NEXT_PUBLIC_SUPABASE_URL is not set. Add it to .env (see .env.example).",
+    );
+  }
+  return url;
+}
+
+export function getSupabaseKey(): string {
+  const key = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
+  if (!key) {
+    throw new Error(
+      "NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY is not set. Add it to .env (see .env.example).",
+    );
+  }
+  return key;
+}
+
+/**
+ * Whether Supabase is configured at all. Accounts and saved analyses are an
+ * additive feature: with no project configured the app still runs analyses,
+ * it just can't persist them. Callers use this to degrade instead of throw.
+ */
+export function isSupabaseConfigured(): boolean {
+  return Boolean(
+    process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY,
+  );
+}
+
 // ───────────────────────────── Models ─────────────────────────────
 
 /**
@@ -50,6 +92,7 @@ export const KNOWN_MODELS = [
   "claude-sonnet-4-6",
   "claude-haiku-4-5",
   "gemini-3.5-flash",
+  "gemini-3.5-flash-lite",
   "gemini-2.5-flash",
 ] as const;
 

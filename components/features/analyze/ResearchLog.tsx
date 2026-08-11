@@ -2,7 +2,7 @@
 
 import { useEffect, useRef } from "react";
 import Card from "@/components/ui/Card";
-import type { AnalysisState, SearchGroup } from "./streamState";
+import type { AnalysisState, SearchGroup } from "@/lib/diligence/stream-state";
 import { domainOf, faviconOf } from "./sourceDisplay";
 
 function SourceRow({ title, url }: { title: string; url: string }) {
