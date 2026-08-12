@@ -133,13 +133,22 @@ function envModel(name: string, fallback: string): string {
   return raw;
 }
 
-/** Per-stage model selection. Defaults reproduce the current pipeline exactly. */
+/**
+ * Per-stage model selection. Gemini across the board — it's faster and cheaper for
+ * this pipeline, and the deliberate default now that the project has standardised
+ * on it. Claude remains fully supported (see `lib/llm/claude.ts`); pointing any
+ * stage at a `claude-*` id routes there with no other change.
+ *
+ * OCR stays on 2.5 Flash rather than 3.5: it's the most token-heavy stage by far —
+ * an entire deck goes in as image data — and 2.5 Flash is 5x cheaper per input
+ * token for what is mechanical transcription rather than judgment.
+ */
 export const getOcrModel = (): string => envModel("OCR_MODEL", "gemini-2.5-flash");
-export const getExtractModel = (): string => envModel("EXTRACT_MODEL", "claude-haiku-4-5");
-export const getResearchModel = (): string => envModel("RESEARCH_MODEL", "claude-haiku-4-5");
-export const getCompleteModel = (): string => envModel("COMPLETE_MODEL", "claude-haiku-4-5");
-export const getScorecardModel = (): string => envModel("SCORECARD_MODEL", "claude-haiku-4-5");
-export const getFeedbackModel = (): string => envModel("FEEDBACK_MODEL", "claude-haiku-4-5");
+export const getExtractModel = (): string => envModel("EXTRACT_MODEL", "gemini-3.5-flash");
+export const getResearchModel = (): string => envModel("RESEARCH_MODEL", "gemini-3.5-flash");
+export const getCompleteModel = (): string => envModel("COMPLETE_MODEL", "gemini-3.5-flash");
+export const getScorecardModel = (): string => envModel("SCORECARD_MODEL", "gemini-3.5-flash");
+export const getFeedbackModel = (): string => envModel("FEEDBACK_MODEL", "gemini-3.5-flash");
 
 // ───────────────────────── Numeric knobs ─────────────────────────
 
@@ -160,9 +169,14 @@ function envInt(name: string, fallback: number, min: number, max: number): numbe
 }
 
 /**
- * Web-research budget (Claude research only — Gemini's Google Search grounding
- * self-manages). `max searches` caps the web_search tool's uses; `max
+ * Web-research budget. `max searches` caps the web_search tool's uses; `max
  * continuations` caps how many times the server-side pause_turn loop resumes.
+ *
+ * NOTE: both gate Claude's `web_search` tool only. Gemini's Google Search
+ * grounding self-manages and never reads them, so with the default
+ * `RESEARCH_MODEL` (Gemini) these values have **no effect at all**. Set
+ * `RESEARCH_MODEL=claude-haiku-4-5` if you need a hard ceiling on the most
+ * expensive stage.
  */
 export const getResearchMaxSearches = (): number => envInt("RESEARCH_MAX_SEARCHES", 3, 0, 10);
 export const getResearchMaxContinuations = (): number =>
