@@ -75,6 +75,25 @@ export function isSupabaseConfigured(): boolean {
   );
 }
 
+/**
+ * The one deliberate exception to "never a secret key" above. Supabase's SDK
+ * has no self-service "delete my own account" call — the only way to remove
+ * an `auth.users` row is `auth.admin.deleteUser(id)`, which requires this key.
+ * Used in exactly one place: `app/api/account/delete/route.ts`, via
+ * `lib/supabase/admin.ts`. Deliberately NOT `NEXT_PUBLIC_` — never inline this
+ * into the browser bundle, and never import `lib/supabase/admin.ts` from a
+ * client component.
+ */
+export function getSupabaseServiceRoleKey(): string {
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!key) {
+    throw new Error(
+      "SUPABASE_SERVICE_ROLE_KEY is not set. Add it to .env (see .env.example).",
+    );
+  }
+  return key;
+}
+
 // ───────────────────────────── Models ─────────────────────────────
 
 /**

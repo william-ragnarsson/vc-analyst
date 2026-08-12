@@ -155,6 +155,14 @@ export default function UserMenu({ onCard }: { onCard: boolean }) {
           >
             My analyses
           </Link>
+          <Link
+            href="/account"
+            role="menuitem"
+            onClick={() => setPanelOpen(false)}
+            className="block px-4 py-2.5 text-sm text-ink transition-colors hover:bg-ink/[0.04]"
+          >
+            Account
+          </Link>
           <button
             role="menuitem"
             onClick={() => {
