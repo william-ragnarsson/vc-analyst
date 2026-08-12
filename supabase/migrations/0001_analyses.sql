@@ -29,11 +29,13 @@ create index analyses_user_created_idx on public.analyses (user_id, created_at d
 
 alter table public.analyses enable row level security;
 
+-- auth.uid() is wrapped in a scalar subquery so Postgres evaluates it once
+-- per query instead of once per row (see the RLS performance guide).
 create policy "own analyses" on public.analyses
   for all
   to authenticated
-  using (auth.uid() = user_id)
-  with check (auth.uid() = user_id);
+  using ((select auth.uid()) = user_id)
+  with check ((select auth.uid()) = user_id);
 
 
 -- ─────────────────────────────  Deck storage  ───────────────────────────────
@@ -47,8 +49,8 @@ on conflict (id) do nothing;
 create policy "own decks" on storage.objects
   for all
   to authenticated
-  using (bucket_id = 'decks' and (storage.foldername(name))[1] = auth.uid()::text)
-  with check (bucket_id = 'decks' and (storage.foldername(name))[1] = auth.uid()::text);
+  using (bucket_id = 'decks' and (storage.foldername(name))[1] = (select auth.uid())::text)
+  with check (bucket_id = 'decks' and (storage.foldername(name))[1] = (select auth.uid())::text);
 
 
 -- ────────────────────  Anonymous → permanent account merge  ─────────────────
@@ -61,9 +63,18 @@ create policy "own decks" on storage.objects
 --  anonymous session left behind.
 --
 --  Guards: the source must still be an anonymous user (a permanent account can
---  never be drained this way), and rows are skipped where the caller already has
+--  never be drained this way), rows are skipped where the caller already has
 --  their own analysis of the same deck — the unique(user_id, deck_hash)
---  constraint would reject those anyway.
+--  constraint would reject those anyway — and the anonymous account must have
+--  been created within the last 24h. p_anon_id is a random uuid so guessing
+--  one is already infeasible, but the recency window is defense in depth: an
+--  anonymous session here is a single visit that either upgrades within
+--  minutes or is abandoned, so a claim naming a day-old-plus anon user is
+--  anomalous. This bounds the blast radius of any future leak of an anon id
+--  to a day instead of forever. (This function is necessarily SECURITY
+--  DEFINER — it moves rows the caller doesn't yet own out from under another
+--  user's RLS — so it will always show up in the security advisor; that's
+--  expected, not a bug.)
 
 create function public.claim_anonymous_analyses(p_anon_id uuid)
   returns integer
@@ -78,7 +89,12 @@ begin
     return 0;
   end if;
 
-  if not exists (select 1 from auth.users where id = p_anon_id and is_anonymous) then
+  if not exists (
+    select 1 from auth.users
+     where id = p_anon_id
+       and is_anonymous
+       and created_at > now() - interval '24 hours'
+  ) then
     return 0;
   end if;
 

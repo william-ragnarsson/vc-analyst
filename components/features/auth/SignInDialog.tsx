@@ -1,13 +1,14 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { useAuth } from "./AuthProvider";
 import { AUTH_PROVIDERS, type AuthProviderId } from "./providers";
 import ProviderIcon from "./ProviderIcon";
 
 /**
- * The sign-in sheet. Deliberately small: three buttons and a sentence about
- * why bothering is worth it.
+ * The sign-in sheet. Deliberately small: one button and a sentence about why
+ * bothering is worth it.
  *
  * Nothing in this app is behind a login, so this is never a wall — it always
  * opens because the user asked it to.
@@ -32,6 +33,14 @@ function SignInPanel({ onClose, reason }: { onClose: () => void; reason?: string
   const { signIn, error } = useAuth();
   const [pending, setPending] = useState<AuthProviderId | null>(null);
   const panelRef = useRef<HTMLDivElement>(null);
+  // Portalled to `document.body` below, which only exists client-side; this
+  // also sidesteps a hydration mismatch from rendering into a portal on the
+  // server. One tick of nothing-shown while true is invisible to the user.
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
@@ -57,7 +66,14 @@ function SignInPanel({ onClose, reason }: { onClose: () => void; reason?: string
     setPending(null);
   }
 
-  return (
+  if (!mounted) return null;
+
+  // Portalled to <body> so the dialog's `fixed inset-0` positions against the
+  // real viewport. Rendered anywhere inside NavBar, it would instead position
+  // against the nav pill's backdrop-blur div — `backdrop-filter` creates a new
+  // CSS containing block for `position: fixed` descendants, which is why the
+  // dialog used to appear pinned near the top instead of vertically centered.
+  return createPortal(
     <div
       className="fixed inset-0 z-[60] flex items-center justify-center px-5"
       role="dialog"
@@ -91,7 +107,7 @@ function SignInPanel({ onClose, reason }: { onClose: () => void; reason?: string
               disabled={pending !== null}
               className="flex w-full items-center justify-center gap-2.5 rounded-full border border-ink/15 bg-white/70 px-4 py-2.5 text-sm font-medium text-ink transition-colors hover:bg-white disabled:cursor-not-allowed disabled:opacity-50"
             >
-              <ProviderIcon provider={id} />
+              <ProviderIcon />
               {pending === id ? "Redirecting…" : label}
             </button>
           ))}
@@ -106,6 +122,7 @@ function SignInPanel({ onClose, reason }: { onClose: () => void; reason?: string
           Not now
         </button>
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }
