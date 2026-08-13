@@ -83,13 +83,15 @@ export default function AccountPage() {
         </div>
       </section>
 
+      <RecentAnalyses />
+
       <section className="space-y-2">
         <span className="text-xs font-semibold uppercase tracking-[0.2em] text-muted">
           Your data
         </span>
         <div className="flex items-center justify-between gap-3 rounded-2xl border border-ink/10 bg-white/55 px-5 py-3.5 backdrop-blur">
           <p className="text-sm text-ink/80">
-            Download everything stored about you — profile, analyses, and links to your decks.
+            Download everything stored about you: profile, analyses, and links to your decks.
           </p>
           <a
             href="/api/account/export"
@@ -100,50 +102,44 @@ export default function AccountPage() {
         </div>
       </section>
 
-      <RecentAnalyses />
-
-      <section className="space-y-2">
-        <span className="text-xs font-semibold uppercase tracking-[0.2em] text-red-700/80">
-          Danger zone
-        </span>
-        <div className="rounded-2xl border border-red-500/25 bg-red-500/[0.04] px-5 py-4">
-          {!confirmingDelete ? (
-            <div className="flex items-center justify-between gap-3">
-              <p className="text-sm text-ink/80">
-                Permanently delete your account, every analysis, and every deck you&apos;ve uploaded.
-              </p>
+      <section>
+        {!confirmingDelete ? (
+          <div className="flex items-center justify-between gap-3 rounded-2xl border border-red-500/25 bg-red-500/[0.04] px-5 py-4">
+            <p className="text-sm text-ink/80">
+              Delete your account and every analysis in it, permanently.
+            </p>
+            <button
+              onClick={() => setConfirmingDelete(true)}
+              className="shrink-0 rounded-full border border-red-600/30 px-4 py-1.5 text-sm font-medium text-red-700 transition-colors hover:bg-red-600/10"
+            >
+              Delete account
+            </button>
+          </div>
+        ) : (
+          <div className="space-y-3 rounded-2xl border border-red-600/20 bg-red-500/[0.03] px-5 py-4">
+            <p className="text-sm text-ink/80">
+              This deletes your account, every analysis, and every deck you&apos;ve uploaded. It
+              happens immediately and it is final.
+            </p>
+            <div className="flex items-center gap-3">
               <button
-                onClick={() => setConfirmingDelete(true)}
-                className="shrink-0 rounded-full border border-red-600/30 px-4 py-1.5 text-sm font-medium text-red-700 transition-colors hover:bg-red-600/10"
+                onClick={() => void handleDelete()}
+                disabled={deleting}
+                className="rounded-full bg-red-700 px-4 py-1.5 text-sm font-medium text-white transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
               >
-                Delete account
+                {deleting ? "Deleting…" : "Yes, delete everything"}
+              </button>
+              <button
+                onClick={() => setConfirmingDelete(false)}
+                disabled={deleting}
+                className="text-sm font-medium text-muted transition-colors hover:text-ink"
+              >
+                Cancel
               </button>
             </div>
-          ) : (
-            <div className="space-y-3">
-              <p className="text-sm font-medium text-red-800">
-                This can&apos;t be undone. Everything you&apos;ve saved will be gone immediately.
-              </p>
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={() => void handleDelete()}
-                  disabled={deleting}
-                  className="rounded-full bg-red-700 px-4 py-1.5 text-sm font-medium text-white transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
-                >
-                  {deleting ? "Deleting…" : "Yes, delete everything"}
-                </button>
-                <button
-                  onClick={() => setConfirmingDelete(false)}
-                  disabled={deleting}
-                  className="rounded-full px-4 py-1.5 text-sm font-medium text-muted transition-colors hover:text-ink"
-                >
-                  Cancel
-                </button>
-              </div>
-              {deleteError && <p className="text-sm text-red-700">{deleteError}</p>}
-            </div>
-          )}
-        </div>
+            {deleteError && <p className="text-sm text-red-700">{deleteError}</p>}
+          </div>
+        )}
       </section>
     </div>
   );

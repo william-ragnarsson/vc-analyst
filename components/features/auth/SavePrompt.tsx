@@ -46,7 +46,7 @@ export default function SavePrompt({
       <SignInDialog
         open={open}
         onClose={() => setOpen(false)}
-        reason="Attach an account and the analyses you've already run come with you — nothing is lost and nothing needs re-running."
+        reason="Attach an account and the analyses you've already run come with you. Nothing is lost and nothing needs re-running."
       />
     </>
   );

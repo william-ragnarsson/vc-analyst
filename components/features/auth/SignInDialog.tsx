@@ -33,14 +33,6 @@ function SignInPanel({ onClose, reason }: { onClose: () => void; reason?: string
   const { signIn, error } = useAuth();
   const [pending, setPending] = useState<AuthProviderId | null>(null);
   const panelRef = useRef<HTMLDivElement>(null);
-  // Portalled to `document.body` below, which only exists client-side; this
-  // also sidesteps a hydration mismatch from rendering into a portal on the
-  // server. One tick of nothing-shown while true is invisible to the user.
-  const [mounted, setMounted] = useState(false);
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
 
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
@@ -65,8 +57,6 @@ function SignInPanel({ onClose, reason }: { onClose: () => void; reason?: string
     // here, something failed and `error` explains it.
     setPending(null);
   }
-
-  if (!mounted) return null;
 
   // Portalled to <body> so the dialog's `fixed inset-0` positions against the
   // real viewport. Rendered anywhere inside NavBar, it would instead position
@@ -96,7 +86,7 @@ function SignInPanel({ onClose, reason }: { onClose: () => void; reason?: string
         </h2>
         <p className="mt-2 text-sm leading-relaxed text-muted">
           {reason ??
-            "Sign in and every report you run stays with your account — on any device, for as long as you want."}
+            "Sign in and every report you run stays with your account, on any device, for as long as you want."}
         </p>
 
         <div className="mt-6 space-y-2">

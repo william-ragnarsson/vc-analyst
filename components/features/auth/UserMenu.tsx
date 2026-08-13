@@ -83,7 +83,7 @@ export default function UserMenu({ onCard }: { onCard: boolean }) {
           >
             <h2 className="text-sm font-semibold tracking-tight text-ink">Keep your analyses</h2>
             <p className="mt-1.5 text-xs leading-relaxed text-muted">
-              Sign in and every report you run stays with your account — on any device, for as
+              Sign in and every report you run stays with your account, on any device, for as
               long as you want.
             </p>
 
@@ -139,7 +139,7 @@ export default function UserMenu({ onCard }: { onCard: boolean }) {
       {panelOpen && (
         <div
           role="menu"
-          className="absolute right-0 top-full z-50 mt-2 w-56 overflow-hidden rounded-2xl border border-ink/12 bg-paper shadow-[0_1px_2px_rgba(20,19,15,0.05),0_16px_40px_-16px_rgba(20,19,15,0.4)]"
+          className="absolute right-0 top-full z-50 mt-3 w-56 overflow-hidden rounded-2xl border border-ink/12 bg-paper shadow-[0_1px_2px_rgba(20,19,15,0.05),0_16px_40px_-16px_rgba(20,19,15,0.4)]"
         >
           <div className="border-b border-ink/8 px-4 py-3">
             <p className="truncate text-sm font-medium text-ink">{name || "Signed in"}</p>
