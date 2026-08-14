@@ -1,35 +1,52 @@
 "use client";
 
-import { useRef, useSyncExternalStore } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import PhaseStepper from "@/components/features/analyze/PhaseStepper";
 import ReportView from "@/components/features/analyze/ReportView";
 import DevCostSidebar from "@/components/features/analyze/DevCostSidebar";
 import { useAnalysis } from "@/components/features/analyze/AnalysisProvider";
-import { getRecord } from "@/lib/diligence/history";
+import { useAuth } from "@/components/features/auth/AuthProvider";
+import SavePrompt from "@/components/features/auth/SavePrompt";
+import { getAnalysis, type AnalysisRecord } from "@/lib/analyses/store";
 
-// A no-op external store whose snapshot is `false` on the server and `true` on
-// the client — i.e. "have we hydrated yet?". Uses useSyncExternalStore (instead
-// of a mounted useState + effect) so it's a single render with no setState.
-const NOOP_SUBSCRIBE = () => () => {};
+/** A resolved lookup, tagged with the id it was for — see the effect below. */
+type Fetched = { id: string; record: AnalysisRecord | null };
 
 export default function ReportPage() {
   const params = useParams<{ id: string }>();
   const id = params.id;
   const { stream, status, currentId, error } = useAnalysis();
+  const { loading: authLoading, isAnonymous } = useAuth();
   const scrollRef = useRef<HTMLDivElement>(null);
-
-  // This page's content comes entirely from client-only sources — localStorage
-  // history (getRecord) and the live-run context — both empty during SSR. Render
-  // nothing until mounted so the server HTML and the first client render agree;
-  // otherwise the two disagree (empty vs. populated) and hydration fails.
-  const mounted = useSyncExternalStore(NOOP_SUBSCRIBE, () => true, () => false);
+  const [fetched, setFetched] = useState<Fetched | null>(null);
 
   const isLive = currentId === id;
-  const record = isLive ? null : getRecord(id);
-  const state = isLive ? stream : record?.state ?? null;
   const active = isLive && status === "loading";
+
+  // A live run already has everything in context — skip the round-trip. Wait
+  // for auth first: querying before the session resolves returns nothing (RLS
+  // scopes every row to auth.uid()) and would flash "not available".
+  useEffect(() => {
+    if (isLive || authLoading) return;
+
+    let cancelled = false;
+    getAnalysis(id).then((record) => {
+      if (!cancelled) setFetched({ id, record });
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [id, isLive, authLoading]);
+
+  // Tagging the result with its id — rather than resetting to a loading state
+  // when `id` changes — keeps this derived, so navigating between two reports
+  // can never show the previous one's contents under the new url.
+  const settled = fetched?.id === id;
+  const record = isLive || !settled ? null : fetched.record;
+  const state = isLive ? stream : record?.state ?? null;
 
   const backButton = (
     <Link
@@ -40,18 +57,26 @@ export default function ReportPage() {
     </Link>
   );
 
-  // Pre-mount (server + first client render): a stable placeholder both agree on.
-  if (!mounted) {
-    return <div className="h-full" />;
+  if (!isLive && (authLoading || !settled)) {
+    return (
+      <div className="mx-auto max-w-3xl px-6 pt-16 text-center text-muted">Loading report…</div>
+    );
   }
 
-  // Neither a live run nor a saved record — e.g. a hard refresh mid-run (only
-  // finished runs persist) or a stale/deleted link.
   if (!state) {
+    // Either the deck was never analyzed under this account, or the run died
+    // before it wrote anything.
+    const interrupted = record?.status === "running" || record?.status === "error";
     return (
       <div className="mx-auto max-w-3xl px-6 pt-16 text-center">
-        <p className="text-lg font-semibold text-ink">This analysis is no longer available.</p>
-        <p className="mt-2 text-muted">Live analyses aren’t saved until they finish. Start a new one:</p>
+        <p className="text-lg font-semibold text-ink">
+          {interrupted ? "This analysis didn’t finish." : "This analysis isn’t available."}
+        </p>
+        <p className="mt-2 text-muted">
+          {interrupted
+            ? record?.error || "It was stopped partway through. Run the deck again to get a report."
+            : "It may belong to another account, or it was deleted."}
+        </p>
         <div className="mt-6 flex justify-center">{backButton}</div>
       </div>
     );
@@ -73,6 +98,11 @@ export default function ReportPage() {
           <p className="mb-4 rounded-2xl border border-red-500/20 bg-red-500/5 px-5 py-4 text-sm text-red-700">
             {error}
           </p>
+        )}
+        {/* Offered once the report is worth keeping, not while it's still
+            being written. */}
+        {isAnonymous && !active && (
+          <SavePrompt className="mb-6" message="This report is saved to this browser only." />
         )}
         <ReportView state={state} active={active} scrollRef={scrollRef} />
       </div>

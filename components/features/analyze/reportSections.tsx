@@ -4,7 +4,7 @@ import DeckFeedbackPanel from "@/components/features/form/DeckFeedbackPanel";
 import ScorecardPanel from "@/components/features/form/ScorecardPanel";
 import { ResearchFindings, WebSearch } from "@/components/features/analyze/ResearchLog";
 import DueDiligenceFormView from "@/components/features/form/DueDiligenceFormView";
-import type { AnalysisState } from "./streamState";
+import type { AnalysisState } from "@/lib/diligence/stream-state";
 
 /**
  * The report section registry — the single place that decides what sections the

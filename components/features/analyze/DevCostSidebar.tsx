@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import type { UsageTotals } from "@/components/features/analyze/streamState";
+import type { UsageTotals } from "@/lib/diligence/stream-state";
 
 /**
  * In-depth dev token/cost analytics, dev-only. `usage` events never reach a
