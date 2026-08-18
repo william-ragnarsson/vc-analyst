@@ -2,6 +2,7 @@
 
 import Dropzone from "@/components/ui/Dropzone";
 import CurrentAnalysisCard from "@/components/features/analyze/CurrentAnalysisCard";
+import SampleDeckPrompt from "@/components/features/analyze/SampleDeckPrompt";
 import { useAnalysis } from "@/components/features/analyze/AnalysisProvider";
 
 type AnalysisLauncherProps = {
@@ -13,6 +14,8 @@ type AnalysisLauncherProps = {
   align?: "left" | "center";
   /** Opaque, lifted dropzone — see `Dropzone`. Light tone only. */
   elevated?: boolean;
+  /** Offer the sample deck under the run button, for visitors without one. */
+  sample?: boolean;
 };
 
 const TONES = {
@@ -39,6 +42,7 @@ export default function AnalysisLauncher({
   compact = false,
   align = "left",
   elevated = false,
+  sample = false,
 }: AnalysisLauncherProps) {
   const { file, setFile, status, start, stop } = useAnalysis();
   const t = TONES[tone];
@@ -70,6 +74,9 @@ export default function AnalysisLauncher({
       >
         Run due diligence →
       </button>
+      {/* Idle branch only: while a run is in flight there's nothing to offer an
+          escape hatch from, and the prompt would sit orphaned under the live card. */}
+      {sample && <SampleDeckPrompt tone={tone} />}
     </div>
   );
 }

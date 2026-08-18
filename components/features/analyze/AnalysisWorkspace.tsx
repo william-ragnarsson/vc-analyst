@@ -6,8 +6,9 @@ import { useAnalysis } from "@/components/features/analyze/AnalysisProvider";
 
 /**
  * The analysis workspace used by /due-diligence: the labelled upload + run
- * controls with recent analyses below. (The home page hoists the launcher into
- * the hero card instead and renders RecentAnalyses on its own.)
+ * controls with recent analyses below. This is where the home page's "Try it
+ * now" CTA lands, so it carries the sample-deck prompt too — otherwise someone
+ * who came here precisely because they had no deck hits the same dead end again.
  */
 export default function AnalysisWorkspace() {
   const { status } = useAnalysis();
@@ -22,7 +23,7 @@ export default function AnalysisWorkspace() {
           <span className="h-px flex-1 bg-ink/10" />
         </div>
 
-        <AnalysisLauncher />
+        <AnalysisLauncher sample />
       </section>
 
       <RecentAnalyses />

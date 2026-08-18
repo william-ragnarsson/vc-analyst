@@ -4,6 +4,7 @@ import { getDiligenceEngine } from "@/lib/diligence/engine";
 import { EmptyDeckError } from "@/lib/diligence/types";
 import type { ProgressEvent } from "@/lib/diligence/types";
 import { costOf } from "@/lib/llm/pricing";
+import { getSampleDeck } from "@/lib/samples/airbnb";
 
 const SHOW_COSTS = process.env.NODE_ENV !== "production";
 
@@ -62,21 +63,40 @@ export async function POST(req: Request) {
 
       try {
         const form = await req.formData();
-        const file = form.get("file");
+        const sampleId = form.get("sample");
 
-        if (!(file instanceof File)) {
-          send({ type: "error", message: "No PDF uploaded." });
-          return;
-        }
-        if (file.type !== "application/pdf") {
-          send({ type: "error", message: "File must be a PDF." });
-          return;
+        // Two ways in: an uploaded PDF, or one of the built-in sample decks. The
+        // sample's text is already extracted (see lib/samples/airbnb.ts), so it
+        // skips the extractor chain entirely — no upload, no OCR. Everything
+        // below this branch is identical for both.
+        let deckText: string;
+
+        if (typeof sampleId === "string") {
+          const sample = getSampleDeck(sampleId);
+          if (!sample) {
+            send({ type: "error", message: "Unknown sample deck." });
+            return;
+          }
+          console.log("[analyze] 📎 sample:", sample.label);
+          deckText = sample.deckText;
+        } else {
+          const file = form.get("file");
+
+          if (!(file instanceof File)) {
+            send({ type: "error", message: "No PDF uploaded." });
+            return;
+          }
+          if (file.type !== "application/pdf") {
+            send({ type: "error", message: "File must be a PDF." });
+            return;
+          }
+
+          const buffer = Buffer.from(await file.arrayBuffer());
+          deckText = await extractDeckText(buffer, (usage) =>
+            send({ type: "usage", stage: "ocr", usage, costUsd: costOf(usage) }),
+          );
         }
 
-        const buffer = Buffer.from(await file.arrayBuffer());
-        const deckText = await extractDeckText(buffer, (usage) =>
-          send({ type: "usage", stage: "ocr", usage, costUsd: costOf(usage) }),
-        );
         const playbook = loadPlaybook();
 
         const report = await getDiligenceEngine().run({ deckText, playbook }, send, req.signal);

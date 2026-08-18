@@ -23,6 +23,7 @@ import {
   subscribeHistory,
   type AnalysisRecord,
 } from "@/lib/diligence/history";
+import type { SampleDeck } from "@/lib/samples/airbnb";
 
 const EMPTY_HISTORY: AnalysisRecord[] = [];
 
@@ -38,6 +39,8 @@ interface AnalysisContextValue {
   currentId: string | null;
   /** Start analysis for the current file. Re-viewing a cached deck routes to its report instead. */
   start: (opts?: { force?: boolean }) => void;
+  /** Start analysis for a built-in sample deck — no upload, no file needed. */
+  startSample: (sample: SampleDeck, opts?: { force?: boolean }) => void;
   /** Aborts an in-flight run (if any) and clears back to the dropzone state. */
   stop: () => void;
   history: AnalysisRecord[];
@@ -71,15 +74,26 @@ export default function AnalysisProvider({ children }: { children: ReactNode }) 
     }
   }
 
-  const start = useCallback(
-    async (opts?: { force?: boolean }) => {
-      const current = file;
-      if (!current) return;
-
-      const id = await hashFile(current);
-
+  /**
+   * The one analysis path, shared by uploads and sample decks. They differ only
+   * in how the id is derived (file hash vs. the sample's fixed id), what goes in
+   * the request body, and the name to fall back on if the engine doesn't name
+   * the company — everything after that is identical.
+   */
+  const run = useCallback(
+    async ({
+      id,
+      fallbackName,
+      body,
+      force,
+    }: {
+      id: string;
+      fallbackName: string;
+      body: FormData;
+      force?: boolean;
+    }) => {
       // Already analyzed this exact deck — open the saved report instead of re-running.
-      if (!opts?.force && getRecord(id)) {
+      if (!force && getRecord(id)) {
         router.push(`/due-diligence/${id}`);
         return;
       }
@@ -97,8 +111,6 @@ export default function AnalysisProvider({ children }: { children: ReactNode }) 
       let working = initialState();
 
       try {
-        const body = new FormData();
-        body.append("file", current);
         const res = await fetch("/api/analyze", { method: "POST", body, signal: controller.signal });
         if (!res.body) throw new Error("No response stream.");
 
@@ -115,7 +127,7 @@ export default function AnalysisProvider({ children }: { children: ReactNode }) 
 
         saveRecord({
           id,
-          name: working.form.company.name.value || current.name,
+          name: working.form.company.name.value || fallbackName,
           generatedAt: working.form.generatedAt || new Date().toISOString(),
           state: working,
         });
@@ -125,7 +137,40 @@ export default function AnalysisProvider({ children }: { children: ReactNode }) 
         setStatus("error");
       }
     },
-    [file, router],
+    [router],
+  );
+
+  const start = useCallback(
+    async (opts?: { force?: boolean }) => {
+      const current = file;
+      if (!current) return;
+
+      const body = new FormData();
+      body.append("file", current);
+
+      await run({
+        id: await hashFile(current),
+        fallbackName: current.name,
+        body,
+        force: opts?.force,
+      });
+    },
+    [file, run],
+  );
+
+  /**
+   * Runs one of the built-in sample decks. Its id is a fixed string rather than
+   * a file hash, so a visitor who already ran the sample lands straight on their
+   * saved report — the same dedupe uploads get, for free.
+   */
+  const startSample = useCallback(
+    async (sample: SampleDeck, opts?: { force?: boolean }) => {
+      const body = new FormData();
+      body.append("sample", sample.id);
+
+      await run({ id: sample.id, fallbackName: sample.label, body, force: opts?.force });
+    },
+    [run],
   );
 
   const stop = useCallback(() => {
@@ -153,6 +198,7 @@ export default function AnalysisProvider({ children }: { children: ReactNode }) 
     stream,
     currentId,
     start,
+    startSample,
     stop,
     history,
     deleteRecord,
