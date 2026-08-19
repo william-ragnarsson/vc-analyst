@@ -15,11 +15,15 @@ const SUBJECTS = ["deck", "team", "market", "traction", "founders"];
 
 export default function Hero() {
   return (
-    // The card is the first screen, so nothing important sits below the fold on
-    // load: its min-height is the viewport less the wrapper's gutter (p-3 /
-    // sm:p-6 — keep the two in step), and its top padding leaves room for the
-    // nav, which floats over the card until you scroll.
-    <section className="relative flex min-h-[calc(100dvh-1.5rem)] flex-col sm:min-h-[calc(100dvh-3rem)] overflow-hidden rounded-[40px] border border-white/10 bg-[linear-gradient(140deg,var(--ink)_0%,var(--ink-2)_55%,#0d2a1c_100%)] px-6 pb-6 pt-[4.5rem] shadow-[0_40px_80px_-40px_rgba(20,19,15,0.55)] ring-1 ring-inset ring-white/5 sm:px-12 sm:pb-10 sm:pt-28">
+    // Sized to its content, not to the viewport. It used to be a full screen
+    // (100dvh less the wrapper gutter), which worked when a dropzone sat under
+    // the headline; with just a button there, the leftover height showed up as
+    // dead air between the CTA and the stats row. A fixed floor keeps the card
+    // generous on any screen and lets the next section peek above the fold,
+    // which reads as "there's more" rather than "this is empty".
+    // Top padding still leaves room for the nav, which floats over the card
+    // until you scroll.
+    <section className="relative flex min-h-[34rem] flex-col sm:min-h-[40rem] lg:min-h-[44rem] overflow-hidden rounded-[40px] border border-white/10 bg-[linear-gradient(140deg,var(--ink)_0%,var(--ink-2)_55%,#0d2a1c_100%)] px-6 pb-6 pt-[4.5rem] shadow-[0_40px_80px_-40px_rgba(20,19,15,0.55)] ring-1 ring-inset ring-white/5 sm:px-12 sm:pb-10 sm:pt-28">
       <div aria-hidden className="hero-grid pointer-events-none absolute inset-0" />
       <div
         aria-hidden

@@ -109,19 +109,6 @@ html, body {
 }
 .cta-glow { animation: cta-glow 6s ease-in-out infinite; }
 
-/* Sample-deck prompt: the arrow draws itself in. The delay is the point — it
-   arrives after the hero has settled, so it reads as an aside someone scribbled
-   in the margin rather than as another thing shouting on load. The dash length
-   just needs to exceed the path length for the wipe to cover it. */
-@keyframes arrow-draw {
-  from { stroke-dashoffset: 90; }
-  to { stroke-dashoffset: 0; }
-}
-.arrow-draw path {
-  stroke-dasharray: 90;
-  animation: arrow-draw 0.7s ease-out 0.6s backwards;
-}
-
 /* Page backdrop: fine dot grid on the paper, the light-side counterpart to
    .hero-grid. Sits in a fixed layer behind every page. */
 /* A hexagonal (triangular) dot lattice rather than a square one: two identical
@@ -155,12 +142,8 @@ html, body {
   .cta-glow,
   .cell-pop,
   .animate-blink,
-  .arrow-draw path,
   .dash-active .dash-rect {
     animation: none !important;
   }
   .marker { background-size: 100% 100%; }
-  /* Without the animation the dash offset never resolves, so reset it — the
-     arrow must still be drawn, just not drawn *in*. */
-  .arrow-draw path { stroke-dashoffset: 0; }
 }

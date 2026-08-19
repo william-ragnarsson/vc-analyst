@@ -76,7 +76,11 @@ export default function AnalysisLauncher({
       </button>
       {/* Idle branch only: while a run is in flight there's nothing to offer an
           escape hatch from, and the prompt would sit orphaned under the live card. */}
-      {sample && <SampleDeckPrompt tone={tone} />}
+      {sample && (
+        <div className="pt-2">
+          <SampleDeckPrompt />
+        </div>
+      )}
     </div>
   );
 }
