@@ -66,7 +66,18 @@ export default function AnalysisLauncher({
 
   return (
     <div className="space-y-4">
-      <Dropzone file={file} onFile={setFile} tone={tone} compact={compact} elevated={elevated} />
+      {/* The sticker is positioned against the dropzone, not stacked under it:
+          overlapping the panel's corner is what makes it read as stuck on top
+          of the UI rather than as part of it. Needs the wrapper because
+          Dropzone's own `relative` box is where its dashed-border SVG lives. */}
+      <div className="relative">
+        <Dropzone file={file} onFile={setFile} tone={tone} compact={compact} elevated={elevated} />
+        {sample && (
+          <div className="absolute -top-4 right-2 z-10 sm:-top-5 sm:right-4">
+            <SampleDeckPrompt />
+          </div>
+        )}
+      </div>
       <button
         onClick={() => start()}
         disabled={!file}
@@ -74,13 +85,6 @@ export default function AnalysisLauncher({
       >
         Run due diligence →
       </button>
-      {/* Idle branch only: while a run is in flight there's nothing to offer an
-          escape hatch from, and the prompt would sit orphaned under the live card. */}
-      {sample && (
-        <div className="pt-2">
-          <SampleDeckPrompt />
-        </div>
-      )}
     </div>
   );
 }
