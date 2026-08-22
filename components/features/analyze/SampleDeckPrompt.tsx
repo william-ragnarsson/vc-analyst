@@ -17,7 +17,10 @@ import { AIRBNB_SAMPLE } from "@/lib/samples/airbnb";
  * time round" in a way no amount of copy would.
  *
  * It leans the opposite way to the panel it sits on and needs no tone variant:
- * the point is to sit apart from whatever is underneath.
+ * the point is to sit apart from whatever is underneath. Hover only scales it —
+ * straightening the tilt on hover undid the sticker read at exactly the moment
+ * someone was looking at it. The press state sinks it into its own hard shadow,
+ * which signals "clickable" without touching the angle.
  */
 export default function SampleDeckPrompt() {
   const { startSample } = useAnalysis();
@@ -27,7 +30,7 @@ export default function SampleDeckPrompt() {
       type="button"
       onClick={() => startSample(AIRBNB_SAMPLE)}
       title={`Runs ${AIRBNB_SAMPLE.label}`}
-      className="rotate-2 whitespace-nowrap rounded-2xl bg-accent-bright px-5 py-3 text-sm font-bold text-ink shadow-[0_7px_0_0_var(--ink)] ring-1 ring-ink/20 transition-transform duration-150 hover:-translate-y-0.5 hover:rotate-1 active:translate-y-1 active:shadow-[0_3px_0_0_var(--ink)] sm:px-6 sm:py-3.5 sm:text-base"
+      className="rotate-2 whitespace-nowrap rounded-2xl bg-accent-bright px-5 py-3 text-sm font-bold text-ink shadow-[0_7px_0_0_var(--ink)] ring-1 ring-ink/20 transition-transform duration-150 hover:scale-105 active:translate-y-1 active:shadow-[0_3px_0_0_var(--ink)] sm:px-6 sm:py-3.5 sm:text-base"
     >
       No pitch deck? Use a sample deck!
     </button>

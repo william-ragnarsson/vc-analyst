@@ -67,13 +67,20 @@ export default function AnalysisLauncher({
   return (
     <div className="space-y-4">
       {/* The sticker is positioned against the dropzone, not stacked under it:
-          overlapping the panel's corner is what makes it read as stuck on top
-          of the UI rather than as part of it. Needs the wrapper because
-          Dropzone's own `relative` box is where its dashed-border SVG lives. */}
+          overlapping the panel's corner — and, from lg up, jutting past its
+          right edge — is what makes it read as stuck on top of the UI rather
+          than as part of it. Needs the wrapper because Dropzone's own
+          `relative` box is where its dashed-border SVG lives.
+
+          The overhang is gated at lg on purpose. This page is `max-w-3xl px-6`,
+          so below 48rem the container is full-width and the only gutter is that
+          24px of padding — hanging out there would cross the viewport edge and
+          give the whole page a horizontal scrollbar. At lg the container is
+          capped and centred, leaving ~128px a side for the sticker to sit in. */}
       <div className="relative">
         <Dropzone file={file} onFile={setFile} tone={tone} compact={compact} elevated={elevated} />
         {sample && (
-          <div className="absolute -top-4 right-2 z-10 sm:-top-5 sm:right-4">
+          <div className="absolute -top-4 right-2 z-10 sm:-top-5 lg:-right-8">
             <SampleDeckPrompt />
           </div>
         )}
