@@ -117,29 +117,47 @@ export default function AnalysisProvider({ children }: { children: ReactNode }) 
    */
   const run = useCallback(
     async ({ id, body, force }: { id: string; body: FormData; force?: boolean }) => {
-      // Nothing is gated, but persistence needs *a* user — so one is minted
-      // here, at the first real action, rather than on every page load.
-      await ensureAnonymous();
-
-      // Already analyzed this exact deck — open the saved report instead of
-      // spending another few minutes reaching the same answer.
-      if (!force) {
-        const existing = await getAnalysis(id);
-        if (existing?.status === "done") {
-          router.push(`/due-diligence/${id}`);
-          return;
-        }
-      }
-
-      abortRef.current?.abort();
-      const controller = new AbortController();
-      abortRef.current = controller;
-
+      // Claim the run and navigate *first*. Everything below needs the network
+      // — minting an anonymous user costs a getUser plus a signInAnonymously,
+      // and the dedupe check is a third round-trip — and doing that before any
+      // state changed left the button sitting there looking dead for the whole
+      // handshake. Both outcomes land on this same URL anyway.
+      //
+      // It has to be the full claim, not just the push: `/due-diligence/[id]`
+      // decides it is showing a live run from `currentId`, so navigating
+      // without setting it flashes "This analysis isn't available" until the
+      // lookup returns.
       setCurrentId(id);
       setStatus("loading");
       setError("");
       dispatch({ type: "reset" });
       router.push(`/due-diligence/${id}`);
+
+      // Both of these are conveniences, not gates, so neither is allowed to take
+      // the run down with it — and now that the loading state is already on
+      // screen, an unhandled rejection here would strand it there forever.
+      try {
+        // Nothing is gated, but persistence needs *a* user — so one is minted
+        // here, at the first real action, rather than on every page load.
+        await ensureAnonymous();
+
+        // Already analyzed this exact deck — hand the page over to the saved
+        // copy rather than spending another few minutes on the same answer.
+        if (!force) {
+          const existing = await getAnalysis(id);
+          if (existing?.status === "done") {
+            setCurrentId(null);
+            setStatus("idle");
+            return;
+          }
+        }
+      } catch (err) {
+        console.warn("[analysis] pre-flight failed, running anyway:", err);
+      }
+
+      abortRef.current?.abort();
+      const controller = new AbortController();
+      abortRef.current = controller;
 
       try {
         const res = await fetch("/api/analyze", { method: "POST", body, signal: controller.signal });
