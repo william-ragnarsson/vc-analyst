@@ -22,6 +22,7 @@ import {
   listAnalyses,
   type AnalysisSummary,
 } from "@/lib/analyses/store";
+import type { SampleDeck } from "@/lib/samples/airbnb";
 
 const EMPTY_HISTORY: AnalysisSummary[] = [];
 
@@ -37,6 +38,8 @@ interface AnalysisContextValue {
   currentId: string | null;
   /** Start analysis for the current file. Re-viewing a saved deck routes to its report instead. */
   start: (opts?: { force?: boolean }) => void;
+  /** Start analysis for a built-in sample deck — no upload, no file needed. */
+  startSample: (sample: SampleDeck, opts?: { force?: boolean }) => void;
   /** Aborts an in-flight run (if any) and clears back to the dropzone state. */
   stop: () => void;
   history: AnalysisSummary[];
@@ -107,40 +110,56 @@ export default function AnalysisProvider({ children }: { children: ReactNode }) 
     }
   }
 
-  const start = useCallback(
-    async (opts?: { force?: boolean }) => {
-      const current = file;
-      if (!current) return;
-
-      const id = await hashFile(current);
-
-      // Nothing is gated, but persistence needs *a* user — so one is minted
-      // here, at the first real action, rather than on every page load.
-      await ensureAnonymous();
-
-      // Already analyzed this exact deck — open the saved report instead of
-      // spending another few minutes reaching the same answer.
-      if (!opts?.force) {
-        const existing = await getAnalysis(id);
-        if (existing?.status === "done") {
-          router.push(`/due-diligence/${id}`);
-          return;
-        }
-      }
-
-      abortRef.current?.abort();
-      const controller = new AbortController();
-      abortRef.current = controller;
-
+  /**
+   * The one analysis path, shared by uploads and sample decks. They differ only
+   * in how the id is derived and what goes in the request body — everything
+   * after that, including naming and persistence, is the route's job now.
+   */
+  const run = useCallback(
+    async ({ id, body, force }: { id: string; body: FormData; force?: boolean }) => {
+      // Claim the run and navigate *first*. Everything below needs the network
+      // — minting an anonymous user costs a getUser plus a signInAnonymously,
+      // and the dedupe check is a third round-trip — and doing that before any
+      // state changed left the button sitting there looking dead for the whole
+      // handshake. Both outcomes land on this same URL anyway.
+      //
+      // It has to be the full claim, not just the push: `/due-diligence/[id]`
+      // decides it is showing a live run from `currentId`, so navigating
+      // without setting it flashes "This analysis isn't available" until the
+      // lookup returns.
       setCurrentId(id);
       setStatus("loading");
       setError("");
       dispatch({ type: "reset" });
       router.push(`/due-diligence/${id}`);
 
+      // Both of these are conveniences, not gates, so neither is allowed to take
+      // the run down with it — and now that the loading state is already on
+      // screen, an unhandled rejection here would strand it there forever.
       try {
-        const body = new FormData();
-        body.append("file", current);
+        // Nothing is gated, but persistence needs *a* user — so one is minted
+        // here, at the first real action, rather than on every page load.
+        await ensureAnonymous();
+
+        // Already analyzed this exact deck — hand the page over to the saved
+        // copy rather than spending another few minutes on the same answer.
+        if (!force) {
+          const existing = await getAnalysis(id);
+          if (existing?.status === "done") {
+            setCurrentId(null);
+            setStatus("idle");
+            return;
+          }
+        }
+      } catch (err) {
+        console.warn("[analysis] pre-flight failed, running anyway:", err);
+      }
+
+      abortRef.current?.abort();
+      const controller = new AbortController();
+      abortRef.current = controller;
+
+      try {
         const res = await fetch("/api/analyze", { method: "POST", body, signal: controller.signal });
         if (!res.body) throw new Error("No response stream.");
 
@@ -163,7 +182,35 @@ export default function AnalysisProvider({ children }: { children: ReactNode }) 
         await refreshHistory();
       }
     },
-    [file, router, ensureAnonymous, refreshHistory],
+    [router, ensureAnonymous, refreshHistory],
+  );
+
+  const start = useCallback(
+    async (opts?: { force?: boolean }) => {
+      const current = file;
+      if (!current) return;
+
+      const body = new FormData();
+      body.append("file", current);
+
+      await run({ id: await hashFile(current), body, force: opts?.force });
+    },
+    [file, run],
+  );
+
+  /**
+   * Runs one of the built-in sample decks. Its id is the sample PDF's own
+   * SHA-256, so it dedupes and routes exactly like an uploaded deck — someone
+   * who already ran the sample lands straight on their saved report.
+   */
+  const startSample = useCallback(
+    async (sample: SampleDeck, opts?: { force?: boolean }) => {
+      const body = new FormData();
+      body.append("sample", sample.id);
+
+      await run({ id: sample.id, body, force: opts?.force });
+    },
+    [run],
   );
 
   const stop = useCallback(() => {
@@ -200,6 +247,7 @@ export default function AnalysisProvider({ children }: { children: ReactNode }) 
     stream,
     currentId,
     start,
+    startSample,
     stop,
     history,
     historyLoading,

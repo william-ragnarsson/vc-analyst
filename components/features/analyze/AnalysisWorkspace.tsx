@@ -10,6 +10,9 @@ import LegacyImportPrompt from "@/components/features/auth/LegacyImportPrompt";
  * The analysis workspace used by /due-diligence: the labelled upload + run
  * controls with saved analyses below. (The home page hoists the launcher into
  * the hero card instead and renders RecentAnalyses on its own.)
+ *
+ * The sample-deck escape hatch comes with `AnalysisLauncher`, so every dropzone
+ * on the site offers the same way out for someone who turns up without a PDF.
  */
 export default function AnalysisWorkspace() {
   const { status, history, refreshHistory } = useAnalysis();

@@ -2,6 +2,7 @@
 
 import Dropzone from "@/components/ui/Dropzone";
 import CurrentAnalysisCard from "@/components/features/analyze/CurrentAnalysisCard";
+import SampleDeckPrompt from "@/components/features/analyze/SampleDeckPrompt";
 import { useAnalysis } from "@/components/features/analyze/AnalysisProvider";
 
 type AnalysisLauncherProps = {
@@ -27,12 +28,19 @@ const TONES = {
 } as const;
 
 /**
- * The upload + run control pair. One analysis runs at a time, so while one is in
- * flight this swaps the dropzone for the live card plus an abort control.
+ * The upload + run control pair, plus the sample-deck escape hatch. One analysis
+ * runs at a time, so while one is in flight this swaps the dropzone for the live
+ * card plus an abort control.
  *
- * Rendered both inside the hero card (dark) and on /due-diligence (light); it
- * reads everything it needs from the analysis context, so the two call sites
- * stay in sync without prop drilling.
+ * The sample sticker is part of this component rather than an opt-in prop: every
+ * dropzone on the site is a place where someone can discover they have no PDF to
+ * hand, so every dropzone needs the same way out. It was a `sample` flag at
+ * first, and it immediately drifted — /due-diligence had it and the closing CTA
+ * on the home page didn't, for no reason anyone chose.
+ *
+ * Rendered in the hero card (dark, compact), the home page's closing CTA (light,
+ * elevated) and on /due-diligence (light); it reads everything it needs from the
+ * analysis context, so the call sites stay in sync without prop drilling.
  */
 export default function AnalysisLauncher({
   tone = "light",
@@ -62,14 +70,36 @@ export default function AnalysisLauncher({
 
   return (
     <div className="space-y-4">
-      <Dropzone file={file} onFile={setFile} tone={tone} compact={compact} elevated={elevated} />
-      <button
-        onClick={() => start()}
-        disabled={!file}
-        className={`rounded-full px-8 py-3.5 font-semibold transition-colors disabled:cursor-not-allowed disabled:opacity-25 ${button} ${t.run}`}
-      >
-        Run due diligence →
-      </button>
+      {/* The sticker is positioned against the dropzone, not stacked under it:
+          overlapping the panel's corner — and, from lg up, jutting past its
+          right edge — is what makes it read as stuck on top of the UI rather
+          than as part of it. Needs the wrapper because Dropzone's own
+          `relative` box is where its dashed-border SVG lives.
+
+          The overhang is gated at lg on purpose. This page is `max-w-3xl px-6`,
+          so below 48rem the container is full-width and the only gutter is that
+          24px of padding — hanging out there would cross the viewport edge and
+          give the whole page a horizontal scrollbar. At lg the container is
+          capped and centred, leaving ~128px a side for the sticker to sit in. */}
+      <div className="relative">
+        <Dropzone file={file} onFile={setFile} tone={tone} compact={compact} elevated={elevated} />
+        <div className="absolute -top-4 right-2 z-10 sm:-top-5 lg:-right-8">
+          <SampleDeckPrompt />
+        </div>
+      </div>
+      {/* Only once there's something to run. Idle, the panel is just the
+          dropzone and the sample sticker — a permanently-disabled button next
+          to a live green one read as clutter, and as two competing offers.
+          It can't go away entirely: the sticker runs the sample deck, this runs
+          the file you actually uploaded. */}
+      {file && (
+        <button
+          onClick={() => start()}
+          className={`rounded-full px-8 py-3.5 font-semibold transition-colors ${button} ${t.run}`}
+        >
+          Run due diligence →
+        </button>
+      )}
     </div>
   );
 }

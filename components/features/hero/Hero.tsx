@@ -34,7 +34,7 @@ export default function Hero() {
             <span className="font-serif font-normal italic">Before</span> you pitch.
           </h1>
 
-          <div className="fade-up mt-8 max-w-xl lg:mt-10" style={{ animationDelay: "0.12s" }}>
+          <div className="fade-up mt-14 max-w-xl lg:mt-20" style={{ animationDelay: "0.12s" }}>
             <AnalysisLauncher tone="dark" compact />
           </div>
         </div>

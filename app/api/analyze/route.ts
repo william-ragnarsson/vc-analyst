@@ -5,6 +5,9 @@ import { EmptyDeckError } from "@/lib/diligence/types";
 import type { ProgressEvent } from "@/lib/diligence/types";
 import { costOf } from "@/lib/llm/pricing";
 import { RateLimitError, startRecording, type AnalysisRecorder } from "@/lib/analyses/persist";
+import { getSampleDeck } from "@/lib/samples/airbnb";
+import { readFile } from "node:fs/promises";
+import { join } from "node:path";
 
 const SHOW_COSTS = process.env.NODE_ENV !== "production";
 
@@ -69,23 +72,49 @@ export async function POST(req: Request) {
 
       try {
         const form = await req.formData();
-        const file = form.get("file");
+        const sampleId = form.get("sample");
 
-        if (!(file instanceof File)) {
-          send({ type: "error", message: "No PDF uploaded." });
-          return;
-        }
-        if (file.type !== "application/pdf") {
-          send({ type: "error", message: "File must be a PDF." });
-          return;
-        }
+        // Two ways in: an uploaded PDF, or one of the built-in sample decks.
+        // They differ only in where the bytes and the text come from — a sample
+        // is read off disk and its text is already extracted (see
+        // lib/samples/airbnb.ts), so it skips the extractor chain and its 29
+        // pages of vision OCR entirely. Both still persist identically.
+        let buffer: Buffer;
+        let name: string;
+        let deckText: string | null = null;
 
-        const buffer = Buffer.from(await file.arrayBuffer());
+        if (typeof sampleId === "string") {
+          const sample = getSampleDeck(sampleId);
+          if (!sample) {
+            send({ type: "error", message: "Unknown sample deck." });
+            return;
+          }
+          console.log("[analyze] 📎 sample:", sample.label);
+          // Read purely so the run is saved and the deck lands in Storage like
+          // any other: the expensive half, extraction, is already done.
+          buffer = await readFile(join(process.cwd(), "public", sample.pdfPath));
+          name = sample.label;
+          deckText = sample.deckText;
+        } else {
+          const file = form.get("file");
+
+          if (!(file instanceof File)) {
+            send({ type: "error", message: "No PDF uploaded." });
+            return;
+          }
+          if (file.type !== "application/pdf") {
+            send({ type: "error", message: "File must be a PDF." });
+            return;
+          }
+
+          buffer = Buffer.from(await file.arrayBuffer());
+          name = file.name;
+        }
 
         // Claims the row and uploads the deck before any tokens are spent, so
         // an abandoned run still leaves a trace the user can come back to.
         try {
-          recorder = await startRecording(buffer, file.name);
+          recorder = await startRecording(buffer, name);
         } catch (err) {
           if (err instanceof RateLimitError) {
             send({ type: "error", message: err.message });
@@ -94,7 +123,7 @@ export async function POST(req: Request) {
           throw err;
         }
 
-        const deckText = await extractDeckText(buffer, (usage) =>
+        deckText ??= await extractDeckText(buffer, (usage) =>
           send({ type: "usage", stage: "ocr", usage, costUsd: costOf(usage) }),
         );
         const playbook = loadPlaybook();
