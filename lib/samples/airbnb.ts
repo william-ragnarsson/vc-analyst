@@ -25,18 +25,24 @@
  */
 
 export interface SampleDeck {
-  /** Stable id — doubles as the history key and the /due-diligence/<id> slug. */
+  /** Hex SHA-256 of the PDF — the dedupe key and the /due-diligence/<id> slug. */
   id: string;
   /** Shown in the prompt, and the report's fallback name. */
   label: string;
-  /** Public path to the source PDF, for the "view the deck" link. */
+  /** Public path to the source PDF: the "view the deck" link, and what the
+   *  analyze route reads off disk in order to persist the run. */
   pdfPath: string;
   /** Pre-extracted deck text — see the regeneration note above. */
   deckText: string;
 }
 
 export const AIRBNB_SAMPLE: SampleDeck = {
-  id: "sample-airbnb-2008",
+  // The PDF's real SHA-256, not a made-up slug. `/due-diligence/[id]`, the
+  // `analyses.deck_hash` column and the client's dedupe check all key off the
+  // deck hash, so the sample has to carry its actual one — otherwise its report
+  // would 404 the moment you reloaded. Recompute with:
+  //   shasum -a 256 public/sample-decks/airbnb-2008-seed-deck.pdf
+  id: "32d03bb287506fc32ee4ef20f608ceb84275270fb87fa906f1f7a10b85dc97d9",
   label: "Airbnb's 2008 seed deck",
   pdfPath: "/sample-decks/airbnb-2008-seed-deck.pdf",
   deckText: `airbnb Pitch Deck

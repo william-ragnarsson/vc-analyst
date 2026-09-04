@@ -4,28 +4,27 @@ import {
   createContext,
   useCallback,
   useContext,
+  useEffect,
   useReducer,
   useRef,
   useState,
-  useSyncExternalStore,
   type ReactNode,
 } from "react";
 import { useRouter } from "next/navigation";
-import { initialState, streamReducer, type AnalysisState } from "./streamState";
+import { initialState, streamReducer, type AnalysisState } from "@/lib/diligence/stream-state";
 import { readProgressStream } from "@/lib/diligence/stream";
+import { useAuth } from "@/components/features/auth/AuthProvider";
+import { hashFile } from "@/lib/analyses/hash";
 import {
-  clearHistory as clearHistoryStorage,
-  deleteRecord as deleteRecordStorage,
-  getRecord,
-  hashFile,
-  loadHistory,
-  saveRecord,
-  subscribeHistory,
-  type AnalysisRecord,
-} from "@/lib/diligence/history";
+  clearAnalyses,
+  deleteAnalysis,
+  getAnalysis,
+  listAnalyses,
+  type AnalysisSummary,
+} from "@/lib/analyses/store";
 import type { SampleDeck } from "@/lib/samples/airbnb";
 
-const EMPTY_HISTORY: AnalysisRecord[] = [];
+const EMPTY_HISTORY: AnalysisSummary[] = [];
 
 type Status = "idle" | "loading" | "done" | "error";
 
@@ -37,15 +36,18 @@ interface AnalysisContextValue {
   stream: AnalysisState;
   /** Hash id of the run currently in the provider (running or just-finished); null when idle. */
   currentId: string | null;
-  /** Start analysis for the current file. Re-viewing a cached deck routes to its report instead. */
+  /** Start analysis for the current file. Re-viewing a saved deck routes to its report instead. */
   start: (opts?: { force?: boolean }) => void;
   /** Start analysis for a built-in sample deck — no upload, no file needed. */
   startSample: (sample: SampleDeck, opts?: { force?: boolean }) => void;
   /** Aborts an in-flight run (if any) and clears back to the dropzone state. */
   stop: () => void;
-  history: AnalysisRecord[];
-  deleteRecord: (id: string) => void;
-  clearHistory: () => void;
+  history: AnalysisSummary[];
+  /** True while the first fetch for the current user is in flight. */
+  historyLoading: boolean;
+  refreshHistory: () => Promise<void>;
+  deleteRecord: (rowId: string) => Promise<void>;
+  clearHistory: () => Promise<void>;
 }
 
 const AnalysisContext = createContext<AnalysisContextValue | null>(null);
@@ -57,14 +59,48 @@ export function useAnalysis(): AnalysisContextValue {
 }
 
 export default function AnalysisProvider({ children }: { children: ReactNode }) {
+  const { user, loading: authLoading, dataVersion, ensureAnonymous } = useAuth();
   const [file, setFileState] = useState<File | null>(null);
   const [status, setStatus] = useState<Status>("idle");
   const [error, setError] = useState("");
   const [currentId, setCurrentId] = useState<string | null>(null);
-  const history = useSyncExternalStore(subscribeHistory, loadHistory, () => EMPTY_HISTORY);
+  const [records, setRecords] = useState<AnalysisSummary[]>(EMPTY_HISTORY);
+  // Which user `records` belongs to. Tracking it lets both the list and its
+  // loading flag be *derived*, so switching users can't leave one account
+  // briefly looking at another's analyses.
+  const [loadedFor, setLoadedFor] = useState<string | null>(null);
   const [stream, dispatch] = useReducer(streamReducer, undefined, initialState);
   const abortRef = useRef<AbortController | null>(null);
   const router = useRouter();
+
+  const userId = user?.id ?? null;
+  const history = loadedFor !== null && loadedFor === userId ? records : EMPTY_HISTORY;
+  const historyLoading = Boolean(userId) && loadedFor !== userId;
+
+  const refreshHistory = useCallback(async () => {
+    const next = await listAnalyses();
+    setRecords(next);
+    setLoadedFor(userId);
+  }, [userId]);
+
+  // History is per-user, so it reloads whenever the user does — including the
+  // anonymous → signed-in upgrade, where the same rows arrive under a real
+  // account. `dataVersion` covers the case where that hand-over finishes after
+  // this list has already loaded. No user means there is nothing to fetch yet.
+  useEffect(() => {
+    if (authLoading || !userId) return;
+
+    let cancelled = false;
+    listAnalyses().then((next) => {
+      if (cancelled) return;
+      setRecords(next);
+      setLoadedFor(userId);
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [userId, authLoading, dataVersion]);
 
   function setFile(f: File | null) {
     setFileState(f);
@@ -76,26 +112,23 @@ export default function AnalysisProvider({ children }: { children: ReactNode }) 
 
   /**
    * The one analysis path, shared by uploads and sample decks. They differ only
-   * in how the id is derived (file hash vs. the sample's fixed id), what goes in
-   * the request body, and the name to fall back on if the engine doesn't name
-   * the company — everything after that is identical.
+   * in how the id is derived and what goes in the request body — everything
+   * after that, including naming and persistence, is the route's job now.
    */
   const run = useCallback(
-    async ({
-      id,
-      fallbackName,
-      body,
-      force,
-    }: {
-      id: string;
-      fallbackName: string;
-      body: FormData;
-      force?: boolean;
-    }) => {
-      // Already analyzed this exact deck — open the saved report instead of re-running.
-      if (!force && getRecord(id)) {
-        router.push(`/due-diligence/${id}`);
-        return;
+    async ({ id, body, force }: { id: string; body: FormData; force?: boolean }) => {
+      // Nothing is gated, but persistence needs *a* user — so one is minted
+      // here, at the first real action, rather than on every page load.
+      await ensureAnonymous();
+
+      // Already analyzed this exact deck — open the saved report instead of
+      // spending another few minutes reaching the same answer.
+      if (!force) {
+        const existing = await getAnalysis(id);
+        if (existing?.status === "done") {
+          router.push(`/due-diligence/${id}`);
+          return;
+        }
       }
 
       abortRef.current?.abort();
@@ -108,15 +141,12 @@ export default function AnalysisProvider({ children }: { children: ReactNode }) 
       dispatch({ type: "reset" });
       router.push(`/due-diligence/${id}`);
 
-      let working = initialState();
-
       try {
         const res = await fetch("/api/analyze", { method: "POST", body, signal: controller.signal });
         if (!res.body) throw new Error("No response stream.");
 
         let sawReport = false;
         for await (const event of readProgressStream(res.body)) {
-          working = streamReducer(working, { type: "event", event });
           dispatch({ type: "event", event });
           if (event.type === "report") sawReport = true;
           else if (event.type === "error") throw new Error(event.message);
@@ -125,19 +155,16 @@ export default function AnalysisProvider({ children }: { children: ReactNode }) 
         if (!sawReport) throw new Error("Analysis ended without a result.");
         setStatus("done");
 
-        saveRecord({
-          id,
-          name: working.form.company.name.value || fallbackName,
-          generatedAt: working.form.generatedAt || new Date().toISOString(),
-          state: working,
-        });
+        // The route saved the report as it streamed; just pick up the new row.
+        await refreshHistory();
       } catch (e) {
         if (controller.signal.aborted) return; // explicit stop / navigated away
         setError(e instanceof Error ? e.message : "Something went wrong.");
         setStatus("error");
+        await refreshHistory();
       }
     },
-    [router],
+    [router, ensureAnonymous, refreshHistory],
   );
 
   const start = useCallback(
@@ -148,27 +175,22 @@ export default function AnalysisProvider({ children }: { children: ReactNode }) 
       const body = new FormData();
       body.append("file", current);
 
-      await run({
-        id: await hashFile(current),
-        fallbackName: current.name,
-        body,
-        force: opts?.force,
-      });
+      await run({ id: await hashFile(current), body, force: opts?.force });
     },
     [file, run],
   );
 
   /**
-   * Runs one of the built-in sample decks. Its id is a fixed string rather than
-   * a file hash, so a visitor who already ran the sample lands straight on their
-   * saved report — the same dedupe uploads get, for free.
+   * Runs one of the built-in sample decks. Its id is the sample PDF's own
+   * SHA-256, so it dedupes and routes exactly like an uploaded deck — someone
+   * who already ran the sample lands straight on their saved report.
    */
   const startSample = useCallback(
     async (sample: SampleDeck, opts?: { force?: boolean }) => {
       const body = new FormData();
       body.append("sample", sample.id);
 
-      await run({ id: sample.id, fallbackName: sample.label, body, force: opts?.force });
+      await run({ id: sample.id, body, force: opts?.force });
     },
     [run],
   );
@@ -182,13 +204,22 @@ export default function AnalysisProvider({ children }: { children: ReactNode }) 
     dispatch({ type: "reset" });
   }, []);
 
-  const deleteRecord = useCallback((id: string) => {
-    deleteRecordStorage(id);
-  }, []);
+  const deleteRecord = useCallback(
+    async (rowId: string) => {
+      // Optimistic, then reconciled: a delete that fails puts the row back
+      // rather than leaving the list quietly wrong.
+      setRecords((prev) => prev.filter((r) => r.rowId !== rowId));
+      await deleteAnalysis(rowId);
+      await refreshHistory();
+    },
+    [refreshHistory],
+  );
 
-  const clearHistory = useCallback(() => {
-    clearHistoryStorage();
-  }, []);
+  const clearHistory = useCallback(async () => {
+    setRecords(EMPTY_HISTORY);
+    await clearAnalyses();
+    await refreshHistory();
+  }, [refreshHistory]);
 
   const value: AnalysisContextValue = {
     file,
@@ -201,6 +232,8 @@ export default function AnalysisProvider({ children }: { children: ReactNode }) 
     startSample,
     stop,
     history,
+    historyLoading,
+    refreshHistory,
     deleteRecord,
     clearHistory,
   };

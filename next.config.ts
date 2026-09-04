@@ -18,11 +18,15 @@ const nextConfig: NextConfig = {
   // "unavailable":
   //   - lib/invest/model.onnx is passed to a native addon, not read via fs.
   //   - libonnxruntime.so.1 is dlopen'd by onnxruntime_binding.node at runtime.
-  // Include both explicitly (Vercel runs linux; skip the win/mac binaries).
+  //   - the sample deck is read with a path built at runtime from process.cwd(),
+  //     and files under public/ aren't in the function bundle by default, so
+  //     without this the sample run 500s on Vercel while working fine locally.
+  // Include all three explicitly (Vercel runs linux; skip the win/mac binaries).
   outputFileTracingIncludes: {
     "/api/analyze": [
       "./lib/invest/model.onnx",
       "./node_modules/onnxruntime-node/bin/napi-v6/linux/**",
+      "./public/sample-decks/**",
     ],
   },
 };

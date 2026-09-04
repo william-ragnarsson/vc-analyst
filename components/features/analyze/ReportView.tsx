@@ -4,7 +4,7 @@ import type { RefObject } from "react";
 import Footer from "@/components/layout/Footer";
 import ChaptersNav from "./ChaptersNav";
 import { REPORT_SECTIONS } from "./reportSections";
-import type { AnalysisState } from "./streamState";
+import type { AnalysisState } from "@/lib/diligence/stream-state";
 
 /**
  * The results layout: a sticky "chapters" nav beside a single column of

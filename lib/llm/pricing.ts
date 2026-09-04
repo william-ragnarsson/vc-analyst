@@ -22,7 +22,14 @@ const PER_MILLION: Record<string, Rate> = {
   // if Google's rate card changes. Gemini has no explicit cache-write charge, so
   // cacheWrite mirrors the input rate as a conservative upper bound.
   "gemini-3.5-flash": { input: 1.5, output: 9.0, cacheRead: 0.15, cacheWrite: 1.5 },
-  "gemini-2.5-flash": { input: 0.3, output: 2.5, cacheRead: 0.075, cacheWrite: 0.3 },
+  // The model itself is verified working; these NUMBERS are not. Google had not
+  // published a 3.5 Flash-Lite rate card as of 2026-08-11 — neither the pricing page
+  // nor the model page lists it — so these are extrapolated from the
+  // 2.5 Flash → 2.5 Flash-Lite ratio and are probably wrong. They only feed the
+  // dev-only cost overlay, never billing or control flow, so the blast radius is a
+  // misreported number. Replace once Google publishes real rates.
+  "gemini-3.5-flash-lite": { input: 0.5, output: 3.0, cacheRead: 0.05, cacheWrite: 0.5 },
+  "gemini-2.5-flash": { input: 0.3, output: 2.5, cacheRead: 0.03, cacheWrite: 0.3 },
 };
 
 /** $ per web search performed by the server-side web_search tool. */

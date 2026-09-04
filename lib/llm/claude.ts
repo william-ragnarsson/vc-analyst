@@ -59,7 +59,26 @@ function usageOf(usage: Anthropic.Usage, model: string): TokenUsage {
   };
 }
 
-/** Anthropic Claude adapter — translates the generic capabilities to the SDK. */
+/**
+ * Anthropic Claude adapter — translates the generic capabilities to the SDK.
+ *
+ * **Dormant by default, deliberately kept.** The pipeline standardised on Gemini
+ * (see the stage defaults in `lib/config.ts`), so nothing here runs unless a stage
+ * is pointed at a `claude-*` model id. It is not dead code, for two reasons:
+ *
+ * 1. It's the fallback when Google has a bad day. Setting `OCR_MODEL` or
+ *    `RESEARCH_MODEL` to a Claude id is a one-line recovery from a Gemini outage,
+ *    and needs no deploy.
+ * 2. It's what keeps `LlmProvider` genuinely provider-neutral. An interface with a
+ *    single implementation drifts to match it. `SystemPrompt = string | SystemBlock[]`
+ *    (`lib/llm/types.ts`) exists *only* because Claude needs `cache_control` markers
+ *    — Gemini joins the blocks and ignores them. Delete this file and that type
+ *    collapses to `string`, at which point adding any provider with prompt caching
+ *    becomes an interface rewrite rather than a new file.
+ *
+ * `getAnthropicApiKey()` is read at call time, so no Anthropic key is required
+ * while nothing routes here.
+ */
 export const claudeProvider: LlmProvider = {
   name: "claude",
 

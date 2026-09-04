@@ -4,7 +4,10 @@ import { getDiligenceEngine } from "@/lib/diligence/engine";
 import { EmptyDeckError } from "@/lib/diligence/types";
 import type { ProgressEvent } from "@/lib/diligence/types";
 import { costOf } from "@/lib/llm/pricing";
+import { RateLimitError, startRecording, type AnalysisRecorder } from "@/lib/analyses/persist";
 import { getSampleDeck } from "@/lib/samples/airbnb";
+import { readFile } from "node:fs/promises";
+import { join } from "node:path";
 
 const SHOW_COSTS = process.env.NODE_ENV !== "production";
 
@@ -23,6 +26,9 @@ export async function POST(req: Request) {
   const stream = new ReadableStream<Uint8Array>({
     async start(controller) {
       let closed = false;
+      // Swapped for a real recorder once we've seen the file and resolved the
+      // user. Until then (and for signed-out callers) every call is a no-op.
+      let recorder: AnalysisRecorder = { deckHash: null, record() {}, async finish() {}, async fail() {} };
 
       // Serialize one event to an NDJSON line, log it server-side, and enqueue.
       // Guarded: if the client disconnected (controller closed), keep logging
@@ -50,6 +56,9 @@ export async function POST(req: Request) {
         } else {
           console.log("[analyze] •", event.phase, "—", event.message);
         }
+        // Fold into the saved report before the enqueue guard: a client that
+        // disconnects mid-run should still find a finished analysis waiting.
+        recorder.record(event);
         // Usage events are a dev-only feature — never let them reach a
         // production client, regardless of what's enqueued elsewhere.
         if (event.type === "usage" && !SHOW_COSTS) return;
@@ -65,11 +74,14 @@ export async function POST(req: Request) {
         const form = await req.formData();
         const sampleId = form.get("sample");
 
-        // Two ways in: an uploaded PDF, or one of the built-in sample decks. The
-        // sample's text is already extracted (see lib/samples/airbnb.ts), so it
-        // skips the extractor chain entirely — no upload, no OCR. Everything
-        // below this branch is identical for both.
-        let deckText: string;
+        // Two ways in: an uploaded PDF, or one of the built-in sample decks.
+        // They differ only in where the bytes and the text come from — a sample
+        // is read off disk and its text is already extracted (see
+        // lib/samples/airbnb.ts), so it skips the extractor chain and its 29
+        // pages of vision OCR entirely. Both still persist identically.
+        let buffer: Buffer;
+        let name: string;
+        let deckText: string | null = null;
 
         if (typeof sampleId === "string") {
           const sample = getSampleDeck(sampleId);
@@ -78,6 +90,10 @@ export async function POST(req: Request) {
             return;
           }
           console.log("[analyze] 📎 sample:", sample.label);
+          // Read purely so the run is saved and the deck lands in Storage like
+          // any other: the expensive half, extraction, is already done.
+          buffer = await readFile(join(process.cwd(), "public", sample.pdfPath));
+          name = sample.label;
           deckText = sample.deckText;
         } else {
           const file = form.get("file");
@@ -91,23 +107,39 @@ export async function POST(req: Request) {
             return;
           }
 
-          const buffer = Buffer.from(await file.arrayBuffer());
-          deckText = await extractDeckText(buffer, (usage) =>
-            send({ type: "usage", stage: "ocr", usage, costUsd: costOf(usage) }),
-          );
+          buffer = Buffer.from(await file.arrayBuffer());
+          name = file.name;
         }
 
+        // Claims the row and uploads the deck before any tokens are spent, so
+        // an abandoned run still leaves a trace the user can come back to.
+        try {
+          recorder = await startRecording(buffer, name);
+        } catch (err) {
+          if (err instanceof RateLimitError) {
+            send({ type: "error", message: err.message });
+            return;
+          }
+          throw err;
+        }
+
+        deckText ??= await extractDeckText(buffer, (usage) =>
+          send({ type: "usage", stage: "ocr", usage, costUsd: costOf(usage) }),
+        );
         const playbook = loadPlaybook();
 
         const report = await getDiligenceEngine().run({ deckText, playbook }, send, req.signal);
         send({ type: "report", report });
+        await recorder.finish();
       } catch (err) {
         if (req.signal.aborted) {
           // Explicit stop or client disconnect — the pipeline already stopped
           // mid-stage; nothing more to report.
           console.log("[analyze] ⏹ aborted");
+          await recorder.fail("Analysis was stopped before it finished.");
         } else if (err instanceof EmptyDeckError) {
           send({ type: "error", message: err.message });
+          await recorder.fail(err.message);
         } else if (
           err instanceof Error &&
           /(API_?KEY is not set|is not a recognised model id)/i.test(err.message)
@@ -115,9 +147,11 @@ export async function POST(req: Request) {
           // Surface the engine's own config message (missing API key, or an
           // unrecognised model id from envModel) so the fix is obvious.
           send({ type: "error", message: err.message });
+          await recorder.fail(err.message);
         } else {
           console.error("[analyze] failed:", err);
           send({ type: "error", message: "Analysis failed. Please try again." });
+          await recorder.fail("Analysis failed. Please try again.");
         }
       } finally {
         if (!closed) {

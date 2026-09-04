@@ -33,6 +33,67 @@ export function getGeminiApiKey(): string {
   return key;
 }
 
+// ───────────────────────────── Supabase ─────────────────────────────
+//
+// Both are public by design (a publishable key is safe in the browser — Row-Level
+// Security is what actually protects the data), so they're NEXT_PUBLIC_ and
+// read directly in client components too. These getters exist for server code
+// and to give one clear error message when the project isn't configured.
+//
+// The key is Supabase's `sb_publishable_…`, which replaces the legacy `anon` JWT.
+// Never the `sb_secret_…` / `service_role` key: those bypass RLS, and nothing in
+// this app needs to.
+
+export function getSupabaseUrl(): string {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  if (!url) {
+    throw new Error(
+      "NEXT_PUBLIC_SUPABASE_URL is not set. Add it to .env (see .env.example).",
+    );
+  }
+  return url;
+}
+
+export function getSupabaseKey(): string {
+  const key = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
+  if (!key) {
+    throw new Error(
+      "NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY is not set. Add it to .env (see .env.example).",
+    );
+  }
+  return key;
+}
+
+/**
+ * Whether Supabase is configured at all. Accounts and saved analyses are an
+ * additive feature: with no project configured the app still runs analyses,
+ * it just can't persist them. Callers use this to degrade instead of throw.
+ */
+export function isSupabaseConfigured(): boolean {
+  return Boolean(
+    process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY,
+  );
+}
+
+/**
+ * The one deliberate exception to "never a secret key" above. Supabase's SDK
+ * has no self-service "delete my own account" call — the only way to remove
+ * an `auth.users` row is `auth.admin.deleteUser(id)`, which requires this key.
+ * Used in exactly one place: `app/api/account/delete/route.ts`, via
+ * `lib/supabase/admin.ts`. Deliberately NOT `NEXT_PUBLIC_` — never inline this
+ * into the browser bundle, and never import `lib/supabase/admin.ts` from a
+ * client component.
+ */
+export function getSupabaseServiceRoleKey(): string {
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!key) {
+    throw new Error(
+      "SUPABASE_SERVICE_ROLE_KEY is not set. Add it to .env (see .env.example).",
+    );
+  }
+  return key;
+}
+
 // ───────────────────────────── Models ─────────────────────────────
 
 /**
@@ -50,6 +111,7 @@ export const KNOWN_MODELS = [
   "claude-sonnet-4-6",
   "claude-haiku-4-5",
   "gemini-3.5-flash",
+  "gemini-3.5-flash-lite",
   "gemini-2.5-flash",
 ] as const;
 
@@ -90,13 +152,22 @@ function envModel(name: string, fallback: string): string {
   return raw;
 }
 
-/** Per-stage model selection. Defaults reproduce the current pipeline exactly. */
+/**
+ * Per-stage model selection. Gemini across the board — it's faster and cheaper for
+ * this pipeline, and the deliberate default now that the project has standardised
+ * on it. Claude remains fully supported (see `lib/llm/claude.ts`); pointing any
+ * stage at a `claude-*` id routes there with no other change.
+ *
+ * OCR stays on 2.5 Flash rather than 3.5: it's the most token-heavy stage by far —
+ * an entire deck goes in as image data — and 2.5 Flash is 5x cheaper per input
+ * token for what is mechanical transcription rather than judgment.
+ */
 export const getOcrModel = (): string => envModel("OCR_MODEL", "gemini-2.5-flash");
-export const getExtractModel = (): string => envModel("EXTRACT_MODEL", "claude-haiku-4-5");
-export const getResearchModel = (): string => envModel("RESEARCH_MODEL", "claude-haiku-4-5");
-export const getCompleteModel = (): string => envModel("COMPLETE_MODEL", "claude-haiku-4-5");
-export const getScorecardModel = (): string => envModel("SCORECARD_MODEL", "claude-haiku-4-5");
-export const getFeedbackModel = (): string => envModel("FEEDBACK_MODEL", "claude-haiku-4-5");
+export const getExtractModel = (): string => envModel("EXTRACT_MODEL", "gemini-3.5-flash");
+export const getResearchModel = (): string => envModel("RESEARCH_MODEL", "gemini-3.5-flash");
+export const getCompleteModel = (): string => envModel("COMPLETE_MODEL", "gemini-3.5-flash");
+export const getScorecardModel = (): string => envModel("SCORECARD_MODEL", "gemini-3.5-flash");
+export const getFeedbackModel = (): string => envModel("FEEDBACK_MODEL", "gemini-3.5-flash");
 
 // ───────────────────────── Numeric knobs ─────────────────────────
 
@@ -117,9 +188,14 @@ function envInt(name: string, fallback: number, min: number, max: number): numbe
 }
 
 /**
- * Web-research budget (Claude research only — Gemini's Google Search grounding
- * self-manages). `max searches` caps the web_search tool's uses; `max
+ * Web-research budget. `max searches` caps the web_search tool's uses; `max
  * continuations` caps how many times the server-side pause_turn loop resumes.
+ *
+ * NOTE: both gate Claude's `web_search` tool only. Gemini's Google Search
+ * grounding self-manages and never reads them, so with the default
+ * `RESEARCH_MODEL` (Gemini) these values have **no effect at all**. Set
+ * `RESEARCH_MODEL=claude-haiku-4-5` if you need a hard ceiling on the most
+ * expensive stage.
  */
 export const getResearchMaxSearches = (): number => envInt("RESEARCH_MAX_SEARCHES", 3, 0, 10);
 export const getResearchMaxContinuations = (): number =>

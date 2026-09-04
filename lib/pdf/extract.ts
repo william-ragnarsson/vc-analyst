@@ -10,10 +10,15 @@ const MIN_DECK_CHARS = 80;
  *
  * This is the single seam between the user's upload and the diligence pipeline.
  * It runs each registered extraction strategy in order (fast native text first,
- * Claude vision OCR as a fallback for image-only / scanned decks) and returns
+ * then provider-backed vision OCR for image-only / scanned decks) and returns
  * the first result that has enough text. A strategy that throws is logged and
  * skipped, so one broken path never blocks the others. Only when every strategy
  * comes up empty do we throw EmptyDeckError for the UI to surface.
+ *
+ * Note the chain is currently two strategies long and vision OCR tries exactly one
+ * model — whichever `OCR_MODEL` names. There is no second OCR attempt and no
+ * cross-provider fallback, so a transient failure from that one model fails the
+ * whole run. Adding a fallback candidate here would be cheap; it hasn't been done.
  *
  * The pipeline downstream is untouched — it still just receives a string.
  */
