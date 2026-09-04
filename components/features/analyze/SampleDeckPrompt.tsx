@@ -30,7 +30,7 @@ export default function SampleDeckPrompt() {
       type="button"
       onClick={() => startSample(AIRBNB_SAMPLE)}
       title={`Runs ${AIRBNB_SAMPLE.label}`}
-      className="rotate-2 whitespace-nowrap rounded-2xl bg-accent-bright px-5 py-3 text-sm font-bold text-ink shadow-[0_7px_0_0_var(--ink)] ring-1 ring-ink/20 transition-transform duration-150 hover:scale-105 active:translate-y-1 active:shadow-[0_3px_0_0_var(--ink)] sm:px-6 sm:py-3.5 sm:text-base"
+      className="rotate-2 whitespace-nowrap rounded-xl bg-accent-bright px-4 py-2.5 text-xs font-bold text-ink shadow-[0_5px_0_0_var(--ink)] ring-1 ring-ink/20 transition-transform duration-150 hover:scale-105 active:translate-y-0.5 active:shadow-[0_3px_0_0_var(--ink)] sm:px-5 sm:py-3 sm:text-sm"
     >
       No pitch deck? Use a sample deck!
     </button>
