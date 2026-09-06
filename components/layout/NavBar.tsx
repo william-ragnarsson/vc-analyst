@@ -29,8 +29,11 @@ export default function NavBar() {
   const loading = status === "loading";
   // Only the home page has a dark card under the nav to merge into.
   const onCard = pathname === "/" && !scrolled;
-  const activeLabel = stream.steps.find((s) => s.status === "active")?.label ?? "Working";
-  const doneCount = stream.steps.filter((s) => s.status === "done").length;
+  const activeIndex = stream.steps.findIndex((s) => s.status === "active");
+  const activeLabel = activeIndex === -1 ? "Working" : stream.steps[activeIndex].label;
+  // 1-indexed "current step" (not a count of completed steps) — so progress
+  // reads 1/5 → 5/5 rather than 0/5 → 4/5, matching CurrentAnalysisCard.
+  const currentStep = activeIndex === -1 ? stream.steps.length : activeIndex + 1;
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 8);
@@ -85,7 +88,7 @@ export default function NavBar() {
                 <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-accent-bright opacity-75" />
                 <span className="relative inline-flex h-2 w-2 rounded-full bg-accent-bright" />
               </span>
-              <span className="tabular-nums">{doneCount}/{stream.steps.length}</span>
+              <span className="tabular-nums">{currentStep}/{stream.steps.length}</span>
               <span className="hidden sm:inline">{activeLabel}…</span>
             </Link>
           )}

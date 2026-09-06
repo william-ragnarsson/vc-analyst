@@ -57,7 +57,7 @@ export default function AnalysisLauncher({
   if (status === "loading") {
     return (
       <div className="space-y-3">
-        <CurrentAnalysisCard />
+        <CurrentAnalysisCard tone={tone} />
         <button
           onClick={stop}
           className={`rounded-full border px-5 py-2.5 text-sm font-medium transition-colors ${button} ${t.abort}`}
