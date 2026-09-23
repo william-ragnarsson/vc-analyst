@@ -109,6 +109,14 @@ html, body {
 }
 .cta-glow { animation: cta-glow 6s ease-in-out infinite; }
 
+/* Current-analysis card: the active step's progress segment breathes, so the
+   bar reads as live rather than stalled between step changes. */
+@keyframes step-active {
+  0%, 100% { opacity: 0.35; }
+  50% { opacity: 1; }
+}
+.step-active { animation: step-active 1.6s ease-in-out infinite; }
+
 /* Page backdrop: fine dot grid on the paper, the light-side counterpart to
    .hero-grid. Sits in a fixed layer behind every page. */
 /* A hexagonal (triangular) dot lattice rather than a square one: two identical
@@ -140,6 +148,7 @@ html, body {
   .word-in,
   .hero-float,
   .cta-glow,
+  .step-active,
   .cell-pop,
   .animate-blink,
   .dash-active .dash-rect {

@@ -10,7 +10,7 @@ type AnalysisLauncherProps = {
   tone?: "light" | "dark";
   /** Tighter dropzone, for when it shares a row with other content. */
   compact?: boolean;
-  /** `center` centres the run/abort button under the dropzone. */
+  /** `center` centres the run button under the dropzone. */
   align?: "left" | "center";
   /** Opaque, lifted dropzone — see `Dropzone`. Light tone only. */
   elevated?: boolean;
@@ -19,18 +19,16 @@ type AnalysisLauncherProps = {
 const TONES = {
   light: {
     run: "bg-ink text-paper hover:bg-accent disabled:hover:bg-ink",
-    abort: "border-ink/15 text-ink/70 hover:bg-ink/5 hover:text-ink",
   },
   dark: {
     run: "bg-accent-bright text-ink hover:bg-white disabled:hover:bg-accent-bright",
-    abort: "border-white/20 text-white/70 hover:bg-white/10 hover:text-white",
   },
 } as const;
 
 /**
  * The upload + run control pair, plus the sample-deck escape hatch. One analysis
  * runs at a time, so while one is in flight this swaps the dropzone for the live
- * card plus an abort control.
+ * analysis card (which carries its own abort control).
  *
  * The sample sticker is part of this component rather than an opt-in prop: every
  * dropzone on the site is a place where someone can discover they have no PDF to
@@ -48,25 +46,14 @@ export default function AnalysisLauncher({
   align = "left",
   elevated = false,
 }: AnalysisLauncherProps) {
-  const { file, setFile, status, start, stop } = useAnalysis();
+  const { file, setFile, status, start } = useAnalysis();
   const t = TONES[tone];
   // Block layout, not flex: the dropzone must stay full-width, and flex children
   // shrink to content under `items-start`. Only the button needs centring.
   const button = align === "center" ? "mx-auto block" : "";
 
-  if (status === "loading") {
-    return (
-      <div className="space-y-3">
-        <CurrentAnalysisCard tone={tone} />
-        <button
-          onClick={stop}
-          className={`rounded-full border px-5 py-2.5 text-sm font-medium transition-colors ${button} ${t.abort}`}
-        >
-          Abort current analysis
-        </button>
-      </div>
-    );
-  }
+  // The card carries its own abort control.
+  if (status === "loading") return <CurrentAnalysisCard tone={tone} />;
 
   return (
     <div className="space-y-4">
