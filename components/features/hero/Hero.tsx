@@ -25,16 +25,23 @@ export default function Hero() {
         className="pointer-events-none absolute -right-24 -top-24 h-96 w-96 rounded-full bg-accent/30 blur-[120px]"
       />
 
-      <div className="relative grid flex-1 items-center gap-12 lg:grid-cols-[minmax(0,1fr)_minmax(0,0.95fr)]">
-        <div>
-          <h1 className="fade-up text-[2.5rem] font-bold leading-[1.02] tracking-[-0.035em] text-white sm:text-6xl lg:text-[4.25rem] xl:text-[5rem]">
-            Have your <RotatingWord words={SUBJECTS} className="text-accent-bright" /> reviewed by
-            a VC.
+      <div className="relative grid flex-1 items-center gap-12 lg:grid-cols-[minmax(0,1.2fr)_minmax(0,0.8fr)]">
+        {/* A size container, so the headline can scale to its column's width
+            (cqw) rather than the viewport's: each of its three lines has to
+            fit on one line at every breakpoint, including the widest rotating
+            word ("Have your founders" is ~9em), so RotatingWord's width change
+            never re-wraps anything. Below lg the report mock is
+            hidden, so the headline and launcher centre in the card. */}
+        <div className="@container text-center lg:text-left">
+          <h1 className="fade-up text-[length:clamp(1.75rem,10.8cqw,5.5rem)] font-bold leading-[1.02] tracking-[-0.035em] text-white">
+            Have your <RotatingWord words={SUBJECTS} className="text-accent-bright" />
+            <br />
+            reviewed by a VC.
             <br />
             <span className="font-serif font-normal italic">Before</span> you pitch.
           </h1>
 
-          <div className="fade-up mt-14 max-w-xl lg:mt-20" style={{ animationDelay: "0.12s" }}>
+          <div className="fade-up mx-auto mt-14 max-w-xl lg:mx-0 lg:mt-20" style={{ animationDelay: "0.12s" }}>
             <AnalysisLauncher tone="dark" compact />
           </div>
         </div>
