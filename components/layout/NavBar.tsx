@@ -52,10 +52,12 @@ export default function NavBar() {
       }
     >
       {/* Only background/border/shadow transition — animating the pill's size
-          makes it jitter against the scroll. */}
+          makes it jitter against the scroll. `relative` because on phones the
+          sign-in panel anchors to the whole pill rather than its button (see
+          UserMenu). */}
       <div
         className={
-          "flex items-center justify-between gap-2 rounded-full border py-2 pl-4 pr-2 backdrop-blur-xl transition-[background-color,border-color,box-shadow,max-width] duration-300 sm:gap-4 " +
+          "relative flex items-center justify-between gap-2 rounded-full border py-2 pl-4 pr-2 backdrop-blur-xl transition-[background-color,border-color,box-shadow,max-width] duration-300 sm:gap-4 " +
           (onCard
             ? "max-w-none border-transparent bg-transparent shadow-none"
             : "mx-auto max-w-3xl border-ink/15 bg-paper/85 shadow-[0_1px_2px_rgba(20,19,15,0.05),0_12px_32px_-12px_rgba(20,19,15,0.35)]")
