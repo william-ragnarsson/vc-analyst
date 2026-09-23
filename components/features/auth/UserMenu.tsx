@@ -1,30 +1,29 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import Link from "next/link";
 import { useAuth } from "./AuthProvider";
-import { AUTH_PROVIDERS, type AuthProviderId } from "./providers";
-import ProviderIcon from "./ProviderIcon";
+import SignInCard from "./SignInCard";
 
 /**
  * The nav's account control: a "Log in / Sign up" pill until there's a real
  * identity, then an avatar with a small menu.
  *
- * The signed-out state opens a small dropdown anchored under the button —
- * matching the signed-in menu below it — rather than a full-screen modal.
- * Nothing in this app is ever gated behind an account, so this is a low-key
- * "here's an option" rather than something that needs to grab the whole
- * screen's attention. (`SavePrompt` still uses the centered `SignInDialog`
- * for the one place sign-in is an active nudge after a finished report.)
+ * The signed-out state opens a dropdown anchored under the button — matching
+ * the signed-in menu below it — rather than a full-screen modal. Nothing in
+ * this app is ever gated behind an account, so this is a low-key "here's an
+ * option" rather than something that needs to grab the whole screen's
+ * attention. (`SavePrompt` still uses the centered `SignInDialog` for the one
+ * place sign-in is an active nudge after a finished report.)
  *
  * `onCard` mirrors NavBar's own variant — on the home page the nav starts
  * inside the dark hero card and everything in it has to switch to light text.
  */
 export default function UserMenu({ onCard }: { onCard: boolean }) {
-  const { user, isIdentified, loading, configured, signIn, signOut, error } = useAuth();
+  const { user, isIdentified, loading, configured, signOut } = useAuth();
   const [panelOpen, setPanelOpen] = useState(false);
-  const [pending, setPending] = useState<AuthProviderId | null>(null);
   const panelRef = useRef<HTMLDivElement>(null);
+  const titleId = useId();
 
   useEffect(() => {
     if (!panelOpen) return;
@@ -50,58 +49,44 @@ export default function UserMenu({ onCard }: { onCard: boolean }) {
   // doesn't flash "Log in / Sign up" at someone who is already signed in.
   if (loading) return <div className="h-8 w-8 shrink-0" aria-hidden="true" />;
 
-  async function handleSignIn(provider: AuthProviderId) {
-    setPending(provider);
-    await signIn(provider);
-    // On success the browser has already left for the provider; if we're
-    // still here, something failed and `error` explains it.
-    setPending(null);
-  }
-
   if (!isIdentified) {
     return (
-      <div ref={panelRef} className="relative shrink-0">
+      // Only a positioning anchor from `sm` up. On a phone a fixed-width panel
+      // hung off this button runs past the left edge, so there the panel
+      // anchors to the nav pill instead and spans its full width.
+      <div ref={panelRef} className="shrink-0 sm:relative">
+        {/* Icon-only below `sm`: next to the three nav links a phone has room
+            for ~40px here, and the text label ran out of the pill and was
+            clipped. It takes the avatar's size and place when signed in. */}
         <button
           onClick={() => setPanelOpen((v) => !v)}
           aria-haspopup="dialog"
           aria-expanded={panelOpen}
+          aria-label="Log in / Sign up"
           className={
-            "rounded-full border px-3 py-1.5 text-sm font-medium transition-colors duration-300 " +
+            "flex h-8 w-8 items-center justify-center rounded-full border text-sm font-medium transition-colors duration-300 sm:h-auto sm:w-auto sm:px-3 sm:py-1.5 " +
             (onCard
               ? "border-white/25 text-white hover:bg-white/10"
               : "border-ink/15 text-ink hover:bg-ink/[0.06]")
           }
         >
-          Log in / Sign up
+          <svg viewBox="0 0 24 24" className="h-4 w-4 sm:hidden" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
+            <circle cx="12" cy="8" r="4" />
+            <path d="M4 21a8 8 0 0 1 16 0" strokeLinecap="round" />
+          </svg>
+          <span className="hidden sm:inline">Log in / Sign up</span>
         </button>
 
         {panelOpen && (
           <div
             role="dialog"
-            aria-label="Sign in"
-            className="absolute right-0 top-full z-50 mt-2 w-72 rounded-2xl border border-ink/12 bg-paper p-5 shadow-[0_1px_2px_rgba(20,19,15,0.05),0_16px_40px_-16px_rgba(20,19,15,0.4)]"
+            aria-labelledby={titleId}
+            className="absolute inset-x-0 top-full z-50 mt-2 sm:inset-x-auto sm:right-0 sm:mt-4 sm:w-[22rem]"
           >
-            <h2 className="text-sm font-semibold tracking-tight text-ink">Keep your analyses</h2>
-            <p className="mt-1.5 text-xs leading-relaxed text-muted">
-              Sign in and every report you run stays with your account, on any device, for as
-              long as you want.
-            </p>
-
-            <div className="mt-4 space-y-2">
-              {AUTH_PROVIDERS.map(({ id, label }) => (
-                <button
-                  key={id}
-                  onClick={() => handleSignIn(id)}
-                  disabled={pending !== null}
-                  className="flex w-full items-center justify-center gap-2.5 rounded-full border border-ink/15 bg-white/70 px-4 py-2 text-sm font-medium text-ink transition-colors hover:bg-white disabled:cursor-not-allowed disabled:opacity-50"
-                >
-                  <ProviderIcon />
-                  {pending === id ? "Redirecting…" : label}
-                </button>
-              ))}
-            </div>
-
-            {error && <p className="mt-3 text-xs text-red-700">{error}</p>}
+            <SignInCard
+              titleId={titleId}
+              className="pop-in max-h-[calc(100dvh-7rem)] origin-top overflow-y-auto sm:origin-top-right"
+            />
           </div>
         )}
       </div>
@@ -139,7 +124,7 @@ export default function UserMenu({ onCard }: { onCard: boolean }) {
       {panelOpen && (
         <div
           role="menu"
-          className="absolute right-0 top-full z-50 mt-3 w-56 overflow-hidden rounded-2xl border border-ink/12 bg-paper shadow-[0_1px_2px_rgba(20,19,15,0.05),0_16px_40px_-16px_rgba(20,19,15,0.4)]"
+          className="pop-in absolute right-0 top-full z-50 mt-4 w-56 origin-top-right overflow-hidden rounded-2xl border border-ink/12 bg-paper shadow-[0_1px_2px_rgba(20,19,15,0.05),0_16px_40px_-16px_rgba(20,19,15,0.4)]"
         >
           <div className="border-b border-ink/8 px-4 py-3">
             <p className="truncate text-sm font-medium text-ink">{name || "Signed in"}</p>

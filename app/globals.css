@@ -51,6 +51,19 @@ html, body {
 }
 .fade-up { animation: fade-up 0.7s cubic-bezier(0.16, 1, 0.3, 1) both; }
 
+/* Popovers and dialogs: a quick settle into place from their anchor. */
+@keyframes pop-in {
+  from { opacity: 0; transform: translateY(-6px) scale(0.97); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+.pop-in { animation: pop-in 0.18s cubic-bezier(0.16, 1, 0.3, 1) both; }
+
+@keyframes fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+.fade-in { animation: fade-in 0.18s ease-out both; }
+
 /* Shorter fade-up for live log entries streaming in */
 @keyframes fade-in-soft {
   from { opacity: 0; transform: translateY(6px); }
@@ -145,6 +158,8 @@ html, body {
 @media (prefers-reduced-motion: reduce) {
   .marker,
   .fade-up,
+  .pop-in,
+  .fade-in,
   .word-in,
   .hero-float,
   .cta-glow,

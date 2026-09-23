@@ -3,10 +3,11 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { useAuth } from "@/components/features/auth/AuthProvider";
+import SignInCard from "@/components/features/auth/SignInCard";
 import RecentAnalyses from "@/components/features/analyze/RecentAnalyses";
 
 export default function AccountPage() {
-  const { user, isIdentified, loading, configured, signIn, signOut } = useAuth();
+  const { user, isIdentified, loading, configured, signOut } = useAuth();
   const router = useRouter();
   const [confirmingDelete, setConfirmingDelete] = useState(false);
   const [deleting, setDeleting] = useState(false);
@@ -20,15 +21,8 @@ export default function AccountPage() {
 
   if (!isIdentified) {
     return (
-      <div className="mx-auto max-w-3xl px-6 pt-10 text-center">
-        <h1 className="text-2xl font-bold tracking-tight text-ink">Account</h1>
-        <p className="mt-2 text-muted">Sign in to see your profile and manage your data.</p>
-        <button
-          onClick={() => void signIn("google")}
-          className="mt-6 rounded-full bg-accent px-5 py-2.5 text-sm font-medium text-white transition-opacity hover:opacity-90"
-        >
-          Continue with Google
-        </button>
+      <div className="mx-auto max-w-sm px-4 pt-10">
+        <SignInCard title="Sign in to your account" />
       </div>
     );
   }
