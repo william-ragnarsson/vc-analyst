@@ -21,17 +21,22 @@ import SignInCard from "./SignInCard";
  */
 export default function UserMenu({ onCard }: { onCard: boolean }) {
   const { user, isIdentified, loading, configured, signOut } = useAuth();
-  const [panelOpen, setPanelOpen] = useState(false);
+  // Which panel was opened, not just whether one is. Logging in by email
+  // happens without a page load, and the sign-in panel that was open must
+  // close rather than turn into an open account menu.
+  const mode = isIdentified ? "menu" : "signin";
+  const [openFor, setOpenFor] = useState<"signin" | "menu" | null>(null);
+  const panelOpen = openFor === mode;
   const panelRef = useRef<HTMLDivElement>(null);
   const titleId = useId();
 
   useEffect(() => {
     if (!panelOpen) return;
     const onPointerDown = (e: PointerEvent) => {
-      if (!panelRef.current?.contains(e.target as Node)) setPanelOpen(false);
+      if (!panelRef.current?.contains(e.target as Node)) setOpenFor(null);
     };
     const onKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape") setPanelOpen(false);
+      if (e.key === "Escape") setOpenFor(null);
     };
     document.addEventListener("pointerdown", onPointerDown);
     document.addEventListener("keydown", onKeyDown);
@@ -59,7 +64,7 @@ export default function UserMenu({ onCard }: { onCard: boolean }) {
             for ~40px here, and the text label ran out of the pill and was
             clipped. It takes the avatar's size and place when signed in. */}
         <button
-          onClick={() => setPanelOpen((v) => !v)}
+          onClick={() => setOpenFor(panelOpen ? null : mode)}
           aria-haspopup="dialog"
           aria-expanded={panelOpen}
           aria-label="Log in / Sign up"
@@ -100,7 +105,7 @@ export default function UserMenu({ onCard }: { onCard: boolean }) {
   return (
     <div ref={panelRef} className="relative shrink-0">
       <button
-        onClick={() => setPanelOpen((v) => !v)}
+        onClick={() => setOpenFor(panelOpen ? null : mode)}
         aria-haspopup="menu"
         aria-expanded={panelOpen}
         aria-label="Account"
@@ -135,7 +140,7 @@ export default function UserMenu({ onCard }: { onCard: boolean }) {
           <Link
             href="/due-diligence"
             role="menuitem"
-            onClick={() => setPanelOpen(false)}
+            onClick={() => setOpenFor(null)}
             className="block px-4 py-2.5 text-sm text-ink transition-colors hover:bg-ink/[0.04]"
           >
             My analyses
@@ -143,7 +148,7 @@ export default function UserMenu({ onCard }: { onCard: boolean }) {
           <Link
             href="/account"
             role="menuitem"
-            onClick={() => setPanelOpen(false)}
+            onClick={() => setOpenFor(null)}
             className="block px-4 py-2.5 text-sm text-ink transition-colors hover:bg-ink/[0.04]"
           >
             Account
@@ -151,7 +156,7 @@ export default function UserMenu({ onCard }: { onCard: boolean }) {
           <button
             role="menuitem"
             onClick={() => {
-              setPanelOpen(false);
+              setOpenFor(null);
               void signOut();
             }}
             className="block w-full px-4 py-2.5 text-left text-sm text-ink transition-colors hover:bg-ink/[0.04]"

@@ -1,8 +1,10 @@
 "use client";
 
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { useAuth } from "@/components/features/auth/AuthProvider";
+import { hasPassword, loginProviders } from "@/components/features/auth/providers";
 import SignInCard from "@/components/features/auth/SignInCard";
 import RecentAnalyses from "@/components/features/analyze/RecentAnalyses";
 
@@ -30,6 +32,11 @@ export default function AccountPage() {
   const email = user?.email ?? "";
   const name = (user?.user_metadata?.full_name as string | undefined) ?? email;
   const avatarUrl = user?.user_metadata?.avatar_url as string | undefined;
+  const withPassword = user ? hasPassword(user) : false;
+  const loginMethods = [
+    ...(user && loginProviders(user).includes("google") ? ["Google"] : []),
+    ...(withPassword ? ["email"] : []),
+  ];
   const memberSince = user?.created_at
     ? new Date(user.created_at).toLocaleDateString(undefined, {
         year: "numeric",
@@ -72,12 +79,32 @@ export default function AccountPage() {
           <p className="truncate font-medium text-ink">{name || "Signed in"}</p>
           {email && name !== email && <p className="truncate text-sm text-muted">{email}</p>}
           <p className="mt-0.5 text-xs text-muted">
-            Signed in with Google{memberSince ? ` · Member since ${memberSince}` : ""}
+            {loginMethods.length ? `Signed in with ${loginMethods.join(" or ")}` : "Signed in"}
+            {memberSince ? ` · Member since ${memberSince}` : ""}
           </p>
         </div>
       </section>
 
       <RecentAnalyses />
+
+      <section className="space-y-2">
+        <span className="text-xs font-semibold uppercase tracking-[0.2em] text-muted">
+          Password
+        </span>
+        <div className="flex items-center justify-between gap-3 rounded-2xl border border-ink/10 bg-white/55 px-5 py-3.5 backdrop-blur">
+          <p className="text-sm text-ink/80">
+            {withPassword
+              ? "Change the password you log in with."
+              : "Set a password so you can also log in with your email."}
+          </p>
+          <Link
+            href="/account/password"
+            className="shrink-0 rounded-full border border-ink/15 px-4 py-1.5 text-sm font-medium text-ink transition-colors hover:bg-ink/[0.06]"
+          >
+            {withPassword ? "Change password" : "Set a password"}
+          </Link>
+        </div>
+      </section>
 
       <section className="space-y-2">
         <span className="text-xs font-semibold uppercase tracking-[0.2em] text-muted">
