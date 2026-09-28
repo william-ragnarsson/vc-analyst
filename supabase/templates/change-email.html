@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="color-scheme" content="light" />
+    <title>Confirm your email</title>
+  </head>
+  <body style="margin:0;padding:0;background:#f6f4ee;">
+    <div style="display:none;max-height:0;overflow:hidden;">One click to finish setting up your account.</div>
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f6f4ee;">
+      <tr>
+        <td align="center" style="padding:40px 16px;">
+          <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:480px;background:#fbf9f3;border:1px solid #e3e0d7;border-radius:24px;">
+            <tr>
+              <td style="padding:32px 32px 28px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;color:#14130f;">
+                <img src="{{ .SiteURL }}/logo.png" width="40" height="40" alt="VC Analyst" style="display:block;border-radius:10px;" />
+                <h1 style="margin:24px 0 8px;font-size:20px;line-height:28px;font-weight:600;">Confirm your email</h1>
+                <p style="margin:0 0 24px;font-size:15px;line-height:24px;color:#54514a;">Confirm <strong style="color:#14130f;">{{ .NewEmail }}</strong> to finish setting up your VC Analyst account. Your saved analyses come with you.</p>
+                <a href="{{ .SiteURL }}/auth/confirm?token_hash={{ .TokenHash }}&amp;type=email_change&amp;next=/due-diligence" style="display:inline-block;background:#14130f;color:#f6f4ee;text-decoration:none;font-size:15px;font-weight:600;line-height:44px;padding:0 24px;border-radius:999px;">Confirm email</a>
+                <p style="margin:24px 0 0;font-size:13px;line-height:20px;color:#54514a;">
+                  Button not working? Paste this link into your browser:<br />
+                  <a href="{{ .SiteURL }}/auth/confirm?token_hash={{ .TokenHash }}&amp;type=email_change&amp;next=/due-diligence" style="color:#1a6b3f;word-break:break-all;">{{ .SiteURL }}/auth/confirm?token_hash={{ .TokenHash }}&amp;type=email_change&amp;next=/due-diligence</a>
+                </p>
+                <p style="margin:24px 0 0;padding-top:16px;border-top:1px solid #e3e0d7;font-size:13px;line-height:20px;color:#54514a;">Didn't ask for this? You can ignore this email — nothing changes until the link is opened.</p>
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+    </table>
+  </body>
+</html>
