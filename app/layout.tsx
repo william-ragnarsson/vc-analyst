@@ -15,7 +15,7 @@ const instrumentSerif = Instrument_Serif({
 });
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://vcanalyst.williamragnarsson.dev";
-const title = "AI VC Analyst - 800+ decks, distilled";
+const title = "SevenFold - AI VC analyst, 800+ decks distilled";
 const description =
   "Top 6 of 250. 800 pitch decks reviewed. Everything I learned, distilled into an AI.";
 
@@ -27,7 +27,7 @@ export const metadata: Metadata = {
     title,
     description,
     url: "/",
-    siteName: "VC Analyst",
+    siteName: "SevenFold",
     type: "website",
     locale: "en_US",
   },

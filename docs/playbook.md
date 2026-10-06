@@ -1,4 +1,4 @@
-# The VC Analyst Playbook
+# The SevenFold Playbook
 
 > This is the exact framework I used to evaluate 800+ pitch decks during my year at Plug and Play Tech Center, one of the world's most active startup accelerators. Everything below is what I learned from weekly partner meetings, deal reviews, and pattern-matching across hundreds of decks, not generic advice you can Google. This is what the AI uses to evaluate your deck.
 

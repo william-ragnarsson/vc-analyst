@@ -64,14 +64,14 @@ export default function NavBar() {
         }
       >
         <Link href="/" className="group flex shrink-0 items-center gap-2">
-          <Image src="/logo.png" alt="VC Analyst" width={28} height={28} className="rounded-md" priority />
+          <Image src="/logo.png" alt="SevenFold" width={28} height={28} className="rounded-md" priority />
           <span
             className={
               "hidden font-semibold tracking-tight transition-[color,opacity] duration-300 group-hover:opacity-60 sm:inline " +
               (onCard ? "text-white" : "text-ink")
             }
           >
-            VC Analyst
+            SevenFold
           </span>
         </Link>
 

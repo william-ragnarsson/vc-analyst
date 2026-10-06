@@ -1,10 +1,10 @@
-# VC Analyst
+# SevenFold
 
 <p align="center">
-  <img src="app/icon.png" alt="VC Analyst Logo" width="120" height="120" style="border-radius: 24px;" />
+  <img src="app/icon.png" alt="SevenFold Logo" width="120" height="120" style="border-radius: 24px;" />
 </p>
 
-<h1 align="center">VC Analyst</h1>
+<h1 align="center">SevenFold</h1>
 
 <p align="center">
   <strong>An AI-powered Venture Capital due diligence engine.</strong> Evaluates pitch decks, performs deep web research to verify claims, critiques decks using real accelerator rubrics, and runs scorecard metrics through an in-process trained ONNX machine learning model.
@@ -20,7 +20,7 @@
 
 ## How It Works
 
-VC Analyst is based on a real-life context database put together while reviewing **800+ pitch decks** at **Plug and Play Tech Center**, one of the world's most active accelerators. 
+SevenFold is based on a real-life context database put together while reviewing **800+ pitch decks** at **Plug and Play Tech Center**, one of the world's most active accelerators. 
 
 ```mermaid
 graph TD
@@ -70,7 +70,7 @@ graph TD
 ## Context database & Custom ML Model
 
 ### 1. The context database
-Instead of generic AI advice, VC Analyst judges pitch decks against a strict, battle-tested accelerator template:
+Instead of generic AI advice, SevenFold judges pitch decks against a strict, battle-tested accelerator template:
 *   **Team Complementarity:** Evaluates whether there's a balanced split of engineering and business/domain expertise.
 *   **Founder Commitment:** Highlights paths to full-time commitment and identifies part-time risks.
 *   **Competitive Authenticity:** Penalizes startups claiming "no competition," looking for true differentiators.

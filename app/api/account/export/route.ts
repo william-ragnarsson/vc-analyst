@@ -66,7 +66,7 @@ export async function GET() {
   return new NextResponse(JSON.stringify(body, null, 2), {
     headers: {
       "Content-Type": "application/json",
-      "Content-Disposition": 'attachment; filename="vc-analyst-export.json"',
+      "Content-Disposition": 'attachment; filename="sevenfold-export.json"',
     },
   });
 }
