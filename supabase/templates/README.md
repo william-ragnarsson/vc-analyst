@@ -9,9 +9,9 @@ Paste each file into Dashboard → Authentication → Emails → Templates:
 
 | Template             | File                  | Subject                           |
 | -------------------- | --------------------- | --------------------------------- |
-| Confirm signup       | `confirm-signup.html` | Confirm your VC Analyst account   |
-| Reset password       | `reset-password.html` | Reset your VC Analyst password    |
-| Change email address | `change-email.html`   | Confirm your email for VC Analyst |
+| Confirm signup       | `confirm-signup.html` | Confirm your SevenFold account   |
+| Reset password       | `reset-password.html` | Reset your SevenFold password    |
+| Change email address | `change-email.html`   | Confirm your email for SevenFold |
 
 The app never changes an existing account's address. "Change email address" is
 what a guest gets when they create an account with analyses already saved (the
