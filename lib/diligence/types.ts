@@ -38,8 +38,12 @@ export interface Scorecard {
   valueProposition: number;
   competitiveAdvantage: number;
   socialImpact: number;
-  /** Funding the startup has already raised to date (not the ask), integer. */
-  funding: number;
+  /**
+   * Funding the startup has already raised to date (not the ask), whole US
+   * dollars. 0 = confirmed nothing raised; null = not known. The model was
+   * trained with that distinction, so unknown must not be collapsed into 0.
+   */
+  funding: number | null;
 }
 
 /** Output of the custom model: invest (1) or don't invest (0). */
@@ -48,7 +52,14 @@ export interface InvestVerdict {
   invest: boolean;
   /** False if the trained model couldn't run (shows a placeholder + note). */
   available: boolean;
-  /** Invest probability 0–1 from the model, when available. */
+  /**
+   * The model's score, 0–1: the invest rate among past decks scored like this
+   * one. `invest` is `score >= threshold`.
+   */
+  score?: number;
+  /** The acceptance gate the score must clear, tuned when the model was trained. */
+  threshold?: number;
+  /** Reports saved before the regression model carry this instead of `score`. */
   probability?: number;
   note?: string;
 }

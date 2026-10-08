@@ -86,7 +86,7 @@ export const DD_SECTIONS: FormSection[] = [
       { key: "scorecard.valueProposition", label: "Value Proposition", kind: "rating", hint: "Rate the value proposition 1-5." },
       { key: "scorecard.competitiveAdvantage", label: "Competitive Advantage", kind: "rating", hint: "Rate the competitive advantage / moat 1-5." },
       { key: "scorecard.socialImpact", label: "Social Impact", kind: "rating", hint: "Rate the social impact 1-5." },
-      { key: "scorecard.funding", label: "Funding raised", kind: "number", hint: "Total funding the startup has ALREADY raised to date (not the current ask), as an integer in the deck's currency (no symbols)." },
+      { key: "scorecard.funding", label: "Funding raised", kind: "number", hint: "Total funding the startup has ALREADY raised to date (not the current ask), as an integer in US dollars (no symbols). 0 = nothing raised; null = unknown." },
     ],
   },
 ];
@@ -168,7 +168,7 @@ export function emptyForm(): DueDiligenceForm {
       valueProposition: 0,
       competitiveAdvantage: 0,
       socialImpact: 0,
-      funding: 0,
+      funding: null,
     },
     verdict: null,
     deckFeedback: [],

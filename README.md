@@ -42,7 +42,7 @@ graph TD
     E -->|6. Qualitative Critique| G[Insiders Feedback Rubric]:::process
     
     F -->|7. Generate Scores| Scorecard[6-Metric Scorecard + Funding]:::process
-    Scorecard -->|8. Inference| ONNX[ONNX Classifier Model]:::main
+    Scorecard -->|8. Inference| ONNX[ONNX Regression Model + Gate]:::main
     ONNX -->|9. predictInvest| Verdict[Investment Pass/Invest Verdict]:::highlight
 ```
 
@@ -59,7 +59,7 @@ graph TD
 *   **Feedback Rubric**
     Flags critical issues, warnings, and strengths (e.g., founder complementarity, full-time commitment, website discoverability, and realistic competitive maps) derived from real accelerator reviews.
 *   **ONNX ML Scoring & Inference**
-    Scores the startup on 6 metrics (Team, Tech, Market Size, Value Prop, Competition, Social Impact) and feeds them into an in-process, trained HistGradientBoosting classifier via `onnxruntime-node` to predict investment verdicts.
+    Scores the startup on 6 metrics (Team, Tech, Market Size, Value Prop, Competition, Social Impact) plus funding raised, and feeds them into an in-process, trained HistGradientBoosting regressor via `onnxruntime-node`. Its 0–1 score is checked against an acceptance gate to give the invest / pass verdict.
 *   **Live Streaming Dashboard**
     An interactive dashboard that streams progress, search queries, research logs, and generated fields in real time using NDJSON.
 *   **Real-time Cost Estimation**
@@ -77,10 +77,10 @@ Instead of generic AI advice, SevenFold judges pitch decks against a strict, bat
 *   **Discoverability:** Verifies if key founders are verifiable online (LinkedIn, publications, GitHub).
 *   and more
 
-### 2. ONNX Classifier
-The investment verdict is determined by a **HistGradientBoosting** model trained on a historical database of 800+ evaluated deals. The model is exported to ONNX format (`lib/invest/model.onnx`) and run locally:
+### 2. ONNX invest model
+The investment verdict comes from a **gradient-boosted regressor** (scikit-learn `HistGradientBoostingRegressor`) trained on 765 hand-reviewed decks that ended in a real invest-or-pass call (199 invest, 566 pass, across 22 pitch sessions). It is fitted to invest = 1 / pass = 0, so its output is a graded 0–1 score: roughly the invest rate among past decks that were scored like this one. An **acceptance gate** turns that score into the verdict. It is set so that, on decks held out from training, the model invests in the same share as William did (about 26%). The gate is built into the ONNX graph (`lib/invest/model.onnx`), and the app runs it in-process:
 ```typescript
-// Features fed into model.onnx in exact order:
+// Input "float_input", float32 [1, 7], in exact order (NaN = not rated / unknown):
 [
   TeamScore,            // 1-5
   TechnologyScore,      // 1-5
@@ -88,9 +88,11 @@ The investment verdict is determined by a **HistGradientBoosting** model trained
   ValuePropScore,       // 1-5
   CompetitionScore,     // 1-5
   SocialImpactScore,    // 1-5
-  FundingRaisedToDate   // Numeric integer
+  FundingRaisedToDate   // USD; 0 = nothing raised yet
 ]
+// Outputs: score (0-1), invest (score >= threshold), threshold (the gate)
 ```
+Training happens offline and is never deployed. [`ml/README.md`](ml/README.md) covers how the confidential review export is cleaned, how its funding column was decoded, and how the model is evaluated. [`lib/invest/model-card.json`](lib/invest/model-card.json) holds the measured results.
 
 ---
 

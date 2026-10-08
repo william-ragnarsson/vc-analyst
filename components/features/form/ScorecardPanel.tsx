@@ -5,12 +5,12 @@ import type { DueDiligenceForm } from "@/lib/diligence/types";
 
 /**
  * The "behind the scenes" scorecard: the model's own rating of the 6 metrics
- * (1–5) plus the funding ask. These are the inputs to the trained invest
+ * (1–5) plus funding already raised. These are the inputs to the trained invest
  * model — not part of the due-diligence document a VC would hand over, but
  * useful to watch fill in live. Sources are shown once, in the research card.
  */
 
-const METRICS: { key: keyof DueDiligenceForm["scorecard"]; label: string }[] = [
+const METRICS: { key: Exclude<keyof DueDiligenceForm["scorecard"], "funding">; label: string }[] = [
   { key: "team", label: "Team" },
   { key: "technology", label: "Technology" },
   { key: "marketSize", label: "Market Size" },
@@ -52,9 +52,12 @@ function Stars({ value, active }: { value: number; active: boolean }) {
 export default function ScorecardPanel({
   form,
   active = false,
+  legacyFunding = false,
 }: {
   form: DueDiligenceForm;
   active?: boolean;
+  /** A report saved before funding was US dollars with 0 = nothing raised: show it as it was. */
+  legacyFunding?: boolean;
 }) {
   const { scorecard } = form;
   return (
@@ -68,10 +71,14 @@ export default function ScorecardPanel({
         ))}
         <div className="flex items-center justify-between gap-3 border-b border-ink/[0.06] py-2">
           <span className="text-sm text-ink/70">Funding raised</span>
-          {scorecard.funding > 0 ? (
+          {/* 0 (confirmed nothing raised) and null (unknown) reach the model as
+              different inputs, so they read differently here too. */}
+          {scorecard.funding !== null && scorecard.funding > 0 ? (
             <span key={scorecard.funding} className="cell-pop font-mono text-sm tabular-nums text-ink">
-              {scorecard.funding.toLocaleString()}
+              {legacyFunding ? scorecard.funding.toLocaleString() : `$${scorecard.funding.toLocaleString("en-US")}`}
             </span>
+          ) : scorecard.funding === 0 && !legacyFunding ? (
+            <span className="cell-pop text-sm text-ink/70">None yet</span>
           ) : active ? (
             <span className="inline-block h-3 w-20 animate-pulse rounded bg-ink/10" />
           ) : (

@@ -164,11 +164,11 @@ Rate each of these 1-5 (1 = weak, 5 = exceptional):
 - socialImpact - positive social or environmental impact.
 
 And one number:
-- funding - the total amount of money the startup has ALREADY RAISED to date (sum of prior rounds / capital in), as a plain integer in the deck's currency (no symbols, no separators). This is NOT the amount they are currently asking for. If nothing has been raised yet, or it's genuinely unknown, use 0.
+- funding - the total amount of money the startup has ALREADY RAISED to date (sum of prior rounds / capital in), as a plain integer in US dollars (no symbols, no separators; convert other currencies at an approximate current rate). This is NOT the amount they are currently asking for. Use 0 only when the deck or research shows nothing has been raised yet (bootstrapped, pre-funding). If it's genuinely unknown, use null - the model treats "raised nothing" and "unknown" differently, so don't guess 0.
 
 ## Output format - STRICT
 Output ONLY one JSON object, nothing else (no prose, no markdown fences):
-{"team": <1-5>, "technology": <1-5>, "marketSize": <1-5>, "valueProposition": <1-5>, "competitiveAdvantage": <1-5>, "socialImpact": <1-5>, "funding": <integer>}`,
+{"team": <1-5>, "technology": <1-5>, "marketSize": <1-5>, "valueProposition": <1-5>, "competitiveAdvantage": <1-5>, "socialImpact": <1-5>, "funding": <integer or null>}`,
   );
 }
 

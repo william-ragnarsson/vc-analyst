@@ -39,7 +39,7 @@ export const REPORT_SECTIONS: ReportSection[] = [
     id: "scorecard",
     label: "Scorecard",
     available: () => true,
-    render: (s, active) => <ScorecardPanel form={s.form} active={active} />,
+    render: (s, active) => <ScorecardPanel form={s.form} active={active} legacyFunding={!s.fundingInUsd} />,
   },
   {
     id: "findings",

@@ -68,6 +68,12 @@ export interface AnalysisState {
   error: string | null;
   /** Dev-only cost overlay data; stays null in production (no `usage` events arrive). */
   usage: UsageTotals | null;
+  /**
+   * True on every run since the regression model: `form.scorecard.funding` is
+   * whole US dollars and 0 means nothing raised. Reports saved before it lack
+   * the flag; there 0 meant unknown and amounts were in the deck's currency.
+   */
+  fundingInUsd?: true;
 }
 
 const STEP_ORDER: { phase: DiligencePhase; label: string }[] = [
@@ -93,6 +99,7 @@ export function initialState(): AnalysisState {
     startedAt: Date.now(),
     error: null,
     usage: null,
+    fundingInUsd: true,
   };
 }
 

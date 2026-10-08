@@ -1,0 +1,3 @@
+# The training pipeline runs once on a laptop; the deployed app only needs its
+# output (lib/invest/model.onnx), so none of ml/ is uploaded.
+/ml

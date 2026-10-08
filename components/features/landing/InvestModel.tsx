@@ -10,14 +10,15 @@ import DealLog from "@/components/features/landing/DealLog";
  * pushed the numbers that actually carry the argument below the fold.
  *
  * The figures are load-bearing rather than round: 7 is the width of the feature
- * vector in `lib/invest/model.ts:35-43`, and 2 is the class count of a binary
- * classifier. Deliberately absent: accuracy, AUC and calibration. None of them
- * are measured anywhere in this repo, so there is no honest number to print.
+ * vector in `lib/invest/model.ts`, and 2 is what the acceptance gate can return.
+ * Deliberately absent: accuracy and AUC. They are measured, on sessions the
+ * model never saw (`lib/invest/model-card.json`), but a single headline figure
+ * from ~770 decks would claim more precision than it has.
  */
 const FIGURES = [
   { value: "800+", label: "Decks reviewed by hand", note: "Each one read end to end, not scraped." },
   { value: "7", label: "Signals scored per deck", note: "The model's whole input. Nothing else reaches it." },
-  { value: "2", label: "Outcomes", note: "Invest or pass, with the probability behind it." },
+  { value: "2", label: "Outcomes", note: "Invest or pass: a 0–100 score against an acceptance gate." },
 ];
 
 export default function InvestModel() {
