@@ -65,8 +65,10 @@ export const config = {
   matcher: [
     /*
      * Everything except static assets — those never carry a session and
-     * waking a Node function for each one is pure waste.
+     * waking a Node function for each one is pure waste — and the MCP server
+     * with its OAuth metadata, which authenticate with bearer tokens, never
+     * cookies.
      */
-    "/((?!_next/static|_next/image|favicon.ico|.*\\.(?:png|jpg|jpeg|gif|webp|svg|ico|txt|xml|woff|woff2)$).*)",
+    "/((?!_next/static|_next/image|favicon.ico|mcp(?:/|$)|\\.well-known/|.*\\.(?:png|jpg|jpeg|gif|webp|svg|ico|txt|xml|woff|woff2)$).*)",
   ],
 };
