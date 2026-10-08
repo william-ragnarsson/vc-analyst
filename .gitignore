@@ -41,3 +41,13 @@ yarn-error.log*
 next-env.d.ts
 
 .claude
+# ml/ — the offline training pipeline (run once locally, never deployed).
+# ml/data/ holds the raw review export: real startup names next to personal
+# invest/pass verdicts. It must never be committed — and neither may anything
+# derived from it row by row. Only the aggregate outputs leave this folder:
+# lib/invest/model.onnx and lib/invest/model-card.json.
+/ml/data/
+/ml/.venv/
+/ml/.pytest_cache/
+/ml/.ruff_cache/
+__pycache__/

@@ -1,0 +1,25 @@
+[project]
+name = "sevenfold-ml"
+version = "0.1.0"
+description = "Offline training for SevenFold's invest/pass model. Run once locally; the app only ships the ONNX file it writes."
+requires-python = ">=3.13"
+dependencies = [
+    "numpy>=2.1",
+    "pandas>=2.2",
+    "scikit-learn>=1.9,<1.10",
+    "skl2onnx>=1.20,<1.21",
+    "onnx>=1.23",
+    "onnxruntime>=1.30",
+    "threadpoolctl>=3.5",
+]
+
+[dependency-groups]
+dev = ["pytest>=8"]
+
+# No [build-system]: this is a set of scripts, not an installable package.
+# Run everything from ml/ with `uv run python -m invest_model.<module>`.
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
+addopts = "--strict-markers"
