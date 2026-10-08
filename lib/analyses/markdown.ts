@@ -12,6 +12,7 @@ import { domainOf } from "@/components/features/analyze/sourceDisplay";
 import { DD_SECTIONS, SCORECARD_METRIC_KEYS } from "@/lib/diligence/form-schema";
 import type { AnalysisState } from "@/lib/diligence/stream-state";
 import type { DeckFeedbackItem, DueDiligenceForm, Field, InvestVerdict, Source } from "@/lib/diligence/types";
+import { formatGauge } from "@/lib/invest/gauge";
 
 /** Research sources listed in a report; the rest are a click away on the page. */
 const MAX_SOURCES = 25;
@@ -47,7 +48,7 @@ export function renderReport(state: AnalysisState, { url, name }: { url: string;
   out.push(`| ${SCORECARD_METRIC_KEYS.map((k) => SCORE_LABELS[k]).join(" | ")} |`);
   out.push(`|${SCORECARD_METRIC_KEYS.map(() => "---").join("|")}|`);
   out.push(`| ${SCORECARD_METRIC_KEYS.map((k) => formatScore(form.scorecard[k])).join(" | ")} |`, "");
-  out.push(`Funding raised to date: ${formatFunding(form.scorecard.funding)}`, "");
+  out.push(`Funding raised to date: ${formatFunding(form.scorecard.funding, state.fundingInUsd === true)}`, "");
 
   for (const section of DD_SECTIONS) {
     if (section.title === "Scorecard") continue;
@@ -103,18 +104,27 @@ function describeVerdict(verdict: InvestVerdict | null): string {
   if (!verdict) return "Not available";
   if (!verdict.available) return `Not available${verdict.note ? ` — ${verdict.note}` : ""}`;
   const call = verdict.invest ? "INVEST" : "PASS";
-  const probability =
-    typeof verdict.probability === "number" ? ` (model's invest probability: ${Math.round(verdict.probability * 100)}%)` : "";
-  return `${call}${probability}${verdict.note ? ` — ${verdict.note}` : ""}`;
+  let detail = "";
+  if (typeof verdict.score === "number" && typeof verdict.threshold === "number") {
+    const gauge = formatGauge(verdict.score, verdict.threshold);
+    detail = ` (model score ${gauge.score} vs. gate ${gauge.gate}, out of 100)`;
+  } else if (typeof verdict.probability === "number") {
+    // Reports saved before the regression model.
+    detail = ` (model's invest probability: ${Math.round(verdict.probability * 100)}%)`;
+  }
+  return `${call}${detail}${verdict.note ? ` — ${verdict.note}` : ""}`;
 }
 
 function formatScore(score: number): string {
   return score > 0 ? `${score}/5` : "—";
 }
 
-function formatFunding(funding: number): string {
-  if (!Number.isFinite(funding) || funding <= 0) return "none found";
-  return new Intl.NumberFormat("en-US").format(funding) + " (deck currency)";
+/** See `AnalysisState.fundingInUsd`: older reports used 0 for unknown, in the deck's currency. */
+function formatFunding(funding: number | null, inUsd: boolean): string {
+  if (funding === null || !Number.isFinite(funding)) return "unknown";
+  if (!inUsd) return funding > 0 ? new Intl.NumberFormat("en-US").format(funding) + " (deck currency)" : "unknown";
+  if (funding <= 0) return "none yet";
+  return "$" + new Intl.NumberFormat("en-US").format(funding);
 }
 
 function fieldAt(form: DueDiligenceForm, key: string): Field | undefined {
