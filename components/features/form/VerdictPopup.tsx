@@ -5,10 +5,34 @@ import Link from "next/link";
 import type { InvestVerdict } from "@/lib/diligence/types";
 
 /**
+ * Score and gate on a 0–100 scale, with just enough decimals that a pass never
+ * prints as "score 41 · gate 41". Rounding never reverses order, so two
+ * different strings always compare the same way the raw numbers do.
+ */
+function formatGauge(score: number, gate: number): { score: string; gate: string } {
+  for (let digits = 0; digits < 3; digits++) {
+    const s = (score * 100).toFixed(digits);
+    const g = (gate * 100).toFixed(digits);
+    if (s !== g || score === gate) return { score: s, gate: g };
+  }
+  return { score: (score * 100).toFixed(3), gate: (gate * 100).toFixed(3) };
+}
+
+/**
+ * How close to the gate (on the 0–1 score) counts as borderline. On decks held
+ * out from training, William invested in a third to a half of those this close
+ * on either side, against under a tenth far below and three quarters far
+ * above. See "out_of_fold_by_distance_from_gate" in lib/invest/model-card.json.
+ */
+const BORDERLINE = 0.05;
+
+/**
  * The investment verdict, shown as a banner once the pipeline finishes. The
- * call comes from William's custom model (trained on 800+ reviewed decks). If
- * the model couldn't run (`available: false`) it shows a clear placeholder
- * rather than a fake invest/pass.
+ * call comes from William's custom model (trained on 765 of 800+ reviewed
+ * decks): a 0–1 score and the acceptance gate it had to clear, drawn as a
+ * meter so a near miss reads differently from a clear pass. If the model
+ * couldn't run (`available: false`) it shows a clear placeholder rather than
+ * a fake invest/pass.
  */
 export default function VerdictPopup({
   verdict,
@@ -36,8 +60,22 @@ export default function VerdictPopup({
 
   const pending = !verdict.available;
   const invest = verdict.invest;
-  const pct =
-    verdict.probability !== undefined ? Math.round(verdict.probability * 100) : null;
+  const gauge =
+    verdict.score !== undefined && verdict.threshold !== undefined
+      ? {
+          label: formatGauge(verdict.score, verdict.threshold),
+          score: Math.min(100, Math.max(0, verdict.score * 100)),
+          gate: Math.min(100, Math.max(0, verdict.threshold * 100)),
+        }
+      : null;
+  const borderline =
+    !pending &&
+    verdict.score !== undefined &&
+    verdict.threshold !== undefined &&
+    Math.abs(verdict.score - verdict.threshold) < BORDERLINE;
+  // Reports saved before the regression model only carry a probability.
+  const legacyPct =
+    !gauge && verdict.probability !== undefined ? Math.round(verdict.probability * 100) : null;
 
   const tone = pending
     ? "border-ink/15 bg-paper-2/70 text-ink"
@@ -72,12 +110,43 @@ export default function VerdictPopup({
         </p>
         <p className="text-lg font-bold">
           {pending ? "Verdict pending" : invest ? "Invest" : "Pass"}
-          {pct !== null && (
+          {gauge && !pending && (
             <span className="ml-2 align-middle font-mono text-sm font-medium text-muted">
-              {pct}% confidence
+              score {gauge.label.score} · gate {gauge.label.gate}
+            </span>
+          )}
+          {legacyPct !== null && (
+            <span className="ml-2 align-middle font-mono text-sm font-medium text-muted">
+              {legacyPct}% confidence
             </span>
           )}
         </p>
+        {gauge && !pending && (
+          <div
+            role="meter"
+            aria-label="Model score against the acceptance gate"
+            aria-valuemin={0}
+            aria-valuemax={100}
+            aria-valuenow={gauge.score}
+            aria-valuetext={`Score ${gauge.label.score} out of 100; invest at ${gauge.label.gate} or above`}
+            className="relative mt-2 h-1.5 w-full max-w-xs rounded-full bg-ink/10"
+          >
+            <div
+              className={`h-full rounded-full ${invest ? "bg-accent" : "bg-red-600/70"}`}
+              style={{ width: `${gauge.score}%` }}
+            />
+            {/* The gate: everything at or right of this tick is an invest. */}
+            <div
+              className="absolute -top-1 h-3.5 w-0.5 -translate-x-1/2 rounded-full bg-ink"
+              style={{ left: `${gauge.gate}%` }}
+            />
+          </div>
+        )}
+        {borderline && (
+          <p className="mt-1.5 text-sm text-ink/80">
+            Borderline: past decks scored this close to the gate went either way.
+          </p>
+        )}
         {pending && verdict.note ? (
           <p className="mt-0.5 text-sm text-muted">{verdict.note}</p>
         ) : (

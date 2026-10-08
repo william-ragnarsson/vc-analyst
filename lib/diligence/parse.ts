@@ -106,8 +106,9 @@ export function applyField(
   if (key.startsWith("scorecard.")) {
     const metric = key.slice("scorecard.".length);
     if (metric === "funding") {
-      const n = Math.round(Number(value));
-      form.scorecard.funding = Number.isFinite(n) ? Math.max(0, n) : 0;
+      // null / "unknown" / garbage stay unknown; 0 means confirmed nothing raised.
+      const n = value === null || value === "" ? Number.NaN : Math.round(Number(value));
+      form.scorecard.funding = Number.isFinite(n) && n >= 0 ? n : null;
       return true;
     }
     if (metric in form.scorecard) {
