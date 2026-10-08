@@ -14,6 +14,7 @@
 import { tryGetSupabaseBrowserClient } from "@/lib/supabase/client";
 import type { AnalysisStatus } from "@/lib/supabase/types";
 import type { AnalysisState } from "@/lib/diligence/stream-state";
+import { runStartedAt } from "@/lib/analyses/status";
 
 /** List-view fields — deliberately excludes `state`, which is a whole report. */
 export interface AnalysisSummary {
@@ -25,6 +26,8 @@ export interface AnalysisSummary {
   status: AnalysisStatus;
   generatedAt: string;
   error: string | null;
+  /** When the run started (ms), for telling a live run from a dead one — see `lib/analyses/status.ts`. */
+  startedAt: number;
 }
 
 export interface AnalysisRecord extends AnalysisSummary {
@@ -32,7 +35,7 @@ export interface AnalysisRecord extends AnalysisSummary {
   deckPath: string | null;
 }
 
-const SUMMARY_COLUMNS = "id, deck_hash, name, status, created_at, completed_at, error";
+const SUMMARY_COLUMNS = "id, deck_hash, name, status, created_at, completed_at, error, started_at:state->startedAt";
 
 interface SummaryRow {
   id: string;
@@ -42,6 +45,7 @@ interface SummaryRow {
   created_at: string;
   completed_at: string | null;
   error: string | null;
+  started_at: number | null;
 }
 
 function toSummary(row: SummaryRow): AnalysisSummary {
@@ -52,6 +56,7 @@ function toSummary(row: SummaryRow): AnalysisSummary {
     status: row.status,
     generatedAt: row.completed_at ?? row.created_at,
     error: row.error,
+    startedAt: runStartedAt(row.started_at, row.created_at),
   };
 }
 

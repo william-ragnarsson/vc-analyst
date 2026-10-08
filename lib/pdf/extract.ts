@@ -3,7 +3,7 @@ import { getDeckTextExtractors } from "@/lib/pdf/extractors";
 import type { TokenUsage } from "@/lib/llm/types";
 
 /** Minimum characters for a deck to count as "readable" rather than empty. */
-const MIN_DECK_CHARS = 80;
+export const MIN_DECK_CHARS = 80;
 
 /**
  * Turn a pitch-deck PDF buffer into the plain `deckText` the pipeline expects.

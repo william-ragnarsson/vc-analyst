@@ -28,6 +28,26 @@ const nextConfig: NextConfig = {
       "./node_modules/onnxruntime-node/bin/napi-v6/linux/**",
       "./public/sample-decks/**",
     ],
+    // The MCP server runs the same pipeline (no sample decks: Claude sends text).
+    "/mcp": [
+      "./lib/invest/model.onnx",
+      "./node_modules/onnxruntime-node/bin/napi-v6/linux/**",
+      "./docs/playbook.md",
+    ],
+  },
+
+  async rewrites() {
+    return [
+      // The metadata URL the MCP server's 401 points at (RFC 9728's
+      // path-suffixed form) serves the same document as the bare one. A rewrite
+      // rather than its own route: include keys match anywhere in a route path,
+      // so a route ending in /mcp would get the ~56 MB above bundled in too —
+      // and Turbopack's outputFileTracingExcludes can't take included files out.
+      {
+        source: "/.well-known/oauth-protected-resource/mcp",
+        destination: "/.well-known/oauth-protected-resource",
+      },
+    ];
   },
 };
 

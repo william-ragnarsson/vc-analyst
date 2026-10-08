@@ -1,10 +1,6 @@
-import { extractDeckText } from "@/lib/pdf/extract";
-import { loadPlaybook } from "@/lib/playbook/load";
-import { getDiligenceEngine } from "@/lib/diligence/engine";
-import { EmptyDeckError } from "@/lib/diligence/types";
 import type { ProgressEvent } from "@/lib/diligence/types";
-import { costOf } from "@/lib/llm/pricing";
-import { RateLimitError, startRecording, type AnalysisRecorder } from "@/lib/analyses/persist";
+import { RateLimitError, startRecording } from "@/lib/analyses/persist";
+import { logEvent, runAnalysis } from "@/lib/analyses/run";
 import { getSampleDeck } from "@/lib/samples/airbnb";
 import { readFile } from "node:fs/promises";
 import { join } from "node:path";
@@ -26,39 +22,11 @@ export async function POST(req: Request) {
   const stream = new ReadableStream<Uint8Array>({
     async start(controller) {
       let closed = false;
-      // Swapped for a real recorder once we've seen the file and resolved the
-      // user. Until then (and for signed-out callers) every call is a no-op.
-      let recorder: AnalysisRecorder = { deckHash: null, record() {}, async finish() {}, async fail() {} };
 
-      // Serialize one event to an NDJSON line, log it server-side, and enqueue.
-      // Guarded: if the client disconnected (controller closed), keep logging
-      // server-side but stop trying to enqueue instead of throwing.
-      const send = (event: ProgressEvent) => {
-        if (event.type === "report") {
-          console.log("[analyze] ▸ report ready");
-        } else if (event.type === "error") {
-          console.log("[analyze] ✖ error:", event.message);
-        } else if (event.type === "search") {
-          console.log("[analyze] 🔎 search:", event.query);
-        } else if (event.type === "source") {
-          console.log("[analyze] 📄 source:", event.title, "—", event.url);
-        } else if (event.type === "field") {
-          console.log("[analyze] ✓ field:", event.key);
-        } else if (event.type === "verdict") {
-          const v = event.verdict;
-          console.log("[analyze] ⚖ verdict:", v.available ? (v.invest ? "INVEST" : "PASS") : "(stub)");
-        } else if (event.type === "note") {
-          // High-frequency note deltas — don't log each one server-side.
-        } else if (event.type === "feedback") {
-          console.log("[analyze] 📝 feedback:", event.item.severity, "—", event.item.title);
-        } else if (event.type === "usage") {
-          console.log(`[analyze] 💰 usage: ${event.stage} $${event.costUsd.toFixed(4)}`);
-        } else {
-          console.log("[analyze] •", event.phase, "—", event.message);
-        }
-        // Fold into the saved report before the enqueue guard: a client that
-        // disconnects mid-run should still find a finished analysis waiting.
-        recorder.record(event);
+      // Serialize one event to an NDJSON line and enqueue it. Guarded: if the
+      // client disconnected (controller closed), stop trying to enqueue instead
+      // of throwing — the run itself carries on and still gets saved.
+      const enqueue = (event: ProgressEvent) => {
         // Usage events are a dev-only feature — never let them reach a
         // production client, regardless of what's enqueued elsewhere.
         if (event.type === "usage" && !SHOW_COSTS) return;
@@ -68,6 +36,13 @@ export async function POST(req: Request) {
         } catch {
           closed = true; // client went away — stop enqueuing, let work finish
         }
+      };
+
+      // For failures before the pipeline starts, which have nothing to save.
+      const reject = (message: string) => {
+        const event: ProgressEvent = { type: "error", message };
+        logEvent("[analyze]", event);
+        enqueue(event);
       };
 
       try {
@@ -85,10 +60,7 @@ export async function POST(req: Request) {
 
         if (typeof sampleId === "string") {
           const sample = getSampleDeck(sampleId);
-          if (!sample) {
-            send({ type: "error", message: "Unknown sample deck." });
-            return;
-          }
+          if (!sample) return reject("Unknown sample deck.");
           console.log("[analyze] 📎 sample:", sample.label);
           // Read purely so the run is saved and the deck lands in Storage like
           // any other: the expensive half, extraction, is already done.
@@ -98,14 +70,8 @@ export async function POST(req: Request) {
         } else {
           const file = form.get("file");
 
-          if (!(file instanceof File)) {
-            send({ type: "error", message: "No PDF uploaded." });
-            return;
-          }
-          if (file.type !== "application/pdf") {
-            send({ type: "error", message: "File must be a PDF." });
-            return;
-          }
+          if (!(file instanceof File)) return reject("No PDF uploaded.");
+          if (file.type !== "application/pdf") return reject("File must be a PDF.");
 
           buffer = Buffer.from(await file.arrayBuffer());
           name = file.name;
@@ -113,46 +79,25 @@ export async function POST(req: Request) {
 
         // Claims the row and uploads the deck before any tokens are spent, so
         // an abandoned run still leaves a trace the user can come back to.
+        let recorder;
         try {
           recorder = await startRecording(buffer, name);
         } catch (err) {
-          if (err instanceof RateLimitError) {
-            send({ type: "error", message: err.message });
-            return;
-          }
+          if (err instanceof RateLimitError) return reject(err.message);
           throw err;
         }
 
-        deckText ??= await extractDeckText(buffer, (usage) =>
-          send({ type: "usage", stage: "ocr", usage, costUsd: costOf(usage) }),
-        );
-        const playbook = loadPlaybook();
-
-        const report = await getDiligenceEngine().run({ deckText, playbook }, send, req.signal);
-        send({ type: "report", report });
-        await recorder.finish();
+        await runAnalysis({
+          deck: deckText === null ? { pdf: buffer } : { text: deckText },
+          recorder,
+          onEvent: enqueue,
+          signal: req.signal,
+          logTag: "[analyze]",
+        });
       } catch (err) {
-        if (req.signal.aborted) {
-          // Explicit stop or client disconnect — the pipeline already stopped
-          // mid-stage; nothing more to report.
-          console.log("[analyze] ⏹ aborted");
-          await recorder.fail("Analysis was stopped before it finished.");
-        } else if (err instanceof EmptyDeckError) {
-          send({ type: "error", message: err.message });
-          await recorder.fail(err.message);
-        } else if (
-          err instanceof Error &&
-          /(API_?KEY is not set|is not a recognised model id)/i.test(err.message)
-        ) {
-          // Surface the engine's own config message (missing API key, or an
-          // unrecognised model id from envModel) so the fix is obvious.
-          send({ type: "error", message: err.message });
-          await recorder.fail(err.message);
-        } else {
-          console.error("[analyze] failed:", err);
-          send({ type: "error", message: "Analysis failed. Please try again." });
-          await recorder.fail("Analysis failed. Please try again.");
-        }
+        // Only the request parsing above can land here — runAnalysis never throws.
+        console.error("[analyze] failed:", err);
+        reject("Analysis failed. Please try again.");
       } finally {
         if (!closed) {
           try {

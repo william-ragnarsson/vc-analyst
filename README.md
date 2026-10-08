@@ -94,6 +94,33 @@ The investment verdict is determined by a **HistGradientBoosting** model trained
 
 ---
 
+## Use it from Claude (MCP)
+
+SevenFold is also a remote [MCP](https://modelcontextprotocol.io) server at `https://vcanalyst.williamragnarsson.dev/mcp`, so you can drop a deck into a Claude chat and get the full report back without opening the site. You sign in with your SevenFold account the first time, and every analysis lands in your history on the site as well.
+
+**Claude (web / desktop):** Settings → Connectors → *Add custom connector* → paste the URL above → *Connect*, then sign in and approve.
+
+**Claude Code:**
+```bash
+claude mcp add --transport http sevenfold https://vcanalyst.williamragnarsson.dev/mcp
+```
+Run `/mcp` once to sign in, then attach a deck and run `/mcp__sevenfold__analyze` (or just ask Claude to analyse it).
+
+What the server offers:
+
+| | |
+|---|---|
+| `analyze_deck` | Runs the full pipeline on a deck's text. Waits up to ~50 s with live progress, then hands back an `analysis_id` if the run is still going. Re-sending the same deck returns the saved report instead of paying for a second run (`rerun: true` forces one). |
+| `get_analysis` | Waits for a run to finish (up to 50 s per call) and returns the report: verdict, scorecard, risks, strengths and a link to the full page. |
+| `list_analyses` | Your recent analyses with their ids and links. |
+| `analyze` prompt | The whole workflow in one step: transcribe the attached deck, run it, wait, summarise. |
+
+**How the PDF gets there.** An MCP server never sees the files you attach in a chat. Claude reads the PDF itself, slides and images included, and sends the transcription as `deck_text`. The pipeline after that is the same one the site runs on an uploaded PDF.
+
+**How sign-in works.** Supabase is the OAuth 2.1 authorization server: Claude registers itself, sends you to Supabase, and Supabase sends you to `/oauth/consent` on this site to approve. The access token it hands Claude is a normal Supabase user token, so every tool call runs under your account with the same Row-Level Security as the website, minus deleting and access to uploaded PDFs (`supabase/migrations/0002_oauth_clients.sql`). The server publishes where to sign in at `/.well-known/oauth-protected-resource/mcp`.
+
+---
+
 ## Tech Stack
 
 - **Framework**: [Next.js 16](https://nextjs.org/) (App Router, Tailwind CSS v4)

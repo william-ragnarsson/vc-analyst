@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useAnalysis } from "./AnalysisProvider";
 import { useAuth } from "@/components/features/auth/AuthProvider";
+import { isStalled } from "@/lib/analyses/status";
 
 function relativeTime(iso: string): string {
   const ms = Date.now() - new Date(iso).getTime();
@@ -69,7 +70,7 @@ export default function RecentAnalyses() {
                           : "bg-red-500/10 text-red-700")
                       }
                     >
-                      {record.status === "running" ? "unfinished" : "failed"}
+                      {record.status === "error" ? "failed" : isStalled(record.status, record.startedAt) ? "unfinished" : "running"}
                     </span>
                   )}
                 </span>
